@@ -1,0 +1,65 @@
+{
+  "name": "marketplace",
+  "version": "0.0.1",
+  "description": "Marketplace",
+  "scripts": {
+    "postinstall": "./scripts/postinstall.sh && exit $?",
+    "jsbin": "ps -fewwww | grep jsbin | awk '{ print $2 }' | xargs kill -TERM; echo 'starting jsbin on http://localhost:3000'; jsbin &> /dev/null &",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "alice": "cd ../marketplace_client; npm run alice; cd -",
+    "bob": "cd ../marketplace_client; npm run bob; cd -",
+    "james": "cd ../marketplace_client; npm run james; cd -",
+    "ragnar": "cd ../marketplace_client; npm run ragnar; cd -",
+    "server": "NODE_ENV=development LOGGY_STACKS=1 ./node_modules/.bin/brunch w -s",
+    "dev": "./node_modules/.bin/concurrently --success last --names 'SRV,BOB,JAMES,RAGNAR,ALICE' --prefix '{name}-{time}' -t HH:mm:ss --prefix-colors cyan,magenta,green,yellow,blue 'npm run server' 'npm run bob' 'npm run james' 'npm run ragnar' 'npm run alice'",
+    "open": "hs -p 3000 ./public",
+    "backup": "F=$npm_package_name$(date +%y%m%d-%H%M).tbz; tar cvfjh ../$F . --exclude=./node_modules --exclude=./marketplace_client/node_modules  --exclude=./build --exclude=./marketplace_client/build --exclude=./marketplace_client/store_*; echo 'ready: ../'$F",
+    "release_bin": "./scripts/release_bin.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; echo 'released'"
+  },
+  "keywords": [
+    "marketplace",
+    "p2p",
+    "PoC"
+  ],
+  "author": "Vi+ <vitaliyy@gmail.com>",
+  "dependencies": {
+    "socket.io": "*",
+    "socket.io-client": "*",
+    "vue": "*",
+    "vue-awesome": "*",
+    "lowdb": "*"
+  },
+  "devDependencies": {
+    "spectre.css": "*",
+    "auto-reload-brunch": "*",
+    "babel-brunch": "*",
+    "babel-plugin-transform-runtime": "*",
+    "babel-preset-es2015": "*",
+    "brunch": "*",
+    "coffee-loader": "*",
+    "coffee-script": "^1.12.7",
+    "coffee-script-brunch": "*",
+    "concurrently": "*",
+    "css-loader": "*",
+    "html2jade": "*",
+    "jade": "*",
+    "jade-brunch": "*",
+    "jade-loader": "*",
+    "js2coffee": "^2.2.0",
+    "pkg": "*",
+    "static-jade-brunch": "*",
+    "stylus": "*",
+    "stylus-brunch": "*",
+    "stylus-loader": "*",
+    "uglify-js-brunch": "*",
+    "vue-brunch": "*",
+    "vueify": "*",
+    "vueify-extract-css": "*"
+  },
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ]
+  }
+}

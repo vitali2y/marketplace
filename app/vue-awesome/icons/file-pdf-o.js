@@ -1,0 +1,1 @@
+../../../node_modules/vue-awesome/icons/file-pdf-o.js
