@@ -1,1 +1,0 @@
-../../../node_modules/vue-awesome/icons/picture-o.js

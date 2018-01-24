@@ -14,7 +14,7 @@
     "dev": "./node_modules/.bin/concurrently --success last --names 'SRV,BOB,JAMES,RAGNAR,ALICE' --prefix '{name}-{time}' -t HH:mm:ss --prefix-colors cyan,magenta,green,yellow,blue 'npm run server' 'npm run bob' 'npm run james' 'npm run ragnar' 'npm run alice'",
     "open": "hs -p 3000 ./public",
     "backup": "F=$npm_package_name$(date +%y%m%d-%H%M).tbz; tar cvfjh ../$F . --exclude=./node_modules --exclude=./marketplace_client/node_modules  --exclude=./build --exclude=./marketplace_client/build --exclude=./marketplace_client/store_*; echo 'ready: ../'$F",
-    "release_bin": "./scripts/release_bin.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; echo 'released'"
+    "release_bin": "./node_modules/.bin/brunch b; ./scripts/release_bin.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; echo 'server released'; cd ./marketplace_client; ./scripts/release_bin.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; cd -"
   },
   "keywords": [
     "marketplace",
