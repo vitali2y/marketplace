@@ -1,0 +1,11 @@
+app/assets
+build
+dist
+public
+vendor
+node_modules
+.vscode
+app/vue-awesome
+server/public
+marketplace_client
+package-lock.json
