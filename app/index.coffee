@@ -7,8 +7,6 @@ require('vueify/lib/insert-css')
 # importing particular icons from Font Awesome set
 Icon = require 'vue-awesome/components/Icon'
 Vue.component('icon', Icon)
-require 'vue-awesome/icons/bank'
-require 'vue-awesome/icons/file-pdf-o'
 require 'vue-awesome/icons/question-circle-o'
 require 'vue-awesome/icons/file-audio-o'
 require 'vue-awesome/icons/file-text-o'
@@ -16,6 +14,12 @@ require 'vue-awesome/icons/file-video-o'
 require 'vue-awesome/icons/file-archive-o'
 require 'vue-awesome/icons/picture-o'
 
+require 'vue-awesome/icons/bank'
+require 'vue-awesome/icons/commenting'
+require 'vue-awesome/icons/shopping-cart'
+require 'vue-awesome/icons/star'
+require 'vue-awesome/icons/eye'
+require 'vue-awesome/icons/bars'
 
 # inter-components global event bus
 bus = new Vue
@@ -23,7 +27,7 @@ Object.defineProperties Vue.prototype, $bus: get: ->
   bus
 
 
-# # TODO: to split into separated components
+# # TODO: to split into separated component files
 # Search = require './components/Search.vue'  # template: '<div>search</div>'
 
 
@@ -32,83 +36,73 @@ skt = io.connect('http://localhost:3000')
 skt.emit('new_user', { hash: document.location.href.split('?')[1][0..31] })
 
 
-# notify user thru raising toasts
-notifyUser = (type, msg, cb) ->
-  console.log "notifyUser (#{type}, #{msg}, <cb>)"
-  document.querySelector('#toast').querySelector('span').innerText = msg
-  document.querySelector("#toast").classList.add("toast-#{type}")
-  document.querySelector("#toast").classList.remove("inactive")
-  setTimeout (->
-    document.querySelector("#toast").classList.add("inactive")
-    document.querySelector("#toast").classList.remove("toast-#{type}")
-    cb()
-    return
-  ), 3000
-  return
-
-
-
-# open popup (modal) window
-window.modalMy = modal = (popupEl) ->
-  popupEl.classList.add("active")
-
-
-
-# close popup window
-window.closeMy = close = (popupEl) ->
-  popupEl.classList.remove("active")
-
-
-
 # navigation bar component
 new Vue(
   el: '#navbar'
-
-  mounted: ->
-    # keeping all available apps
-    for _a in document.getElementsByClassName('app')
-      # if _a.id.startsWith('app-')
-      @allApps.push _a
-    # activate app event
-    @$bus.$on 'activate-app', (msg) =>
-      console.log 'on activate-app:', msg
-      for _a in @allApps
-        document.querySelector('#' + _a.id).classList.add("inactive")
-      document.querySelector(msg['app']).classList.remove("inactive")
-      console.log 'active app:', msg['app']
-      filesMy.getFiles()
-
-  data:
-    allApps: []
-    appSelected: ''
 
   methods:
     modal: (app) ->
       @$bus.$emit "open-modal-#{app}"
     app: (appName) ->
-      console.log 'app=', appName
-      @appSelected = appName
-      @$bus.$emit 'activate-app', app: '#app-' + appName
+      @$bus.$emit 'activate-app', name: '#app-' + appName
 )
 
 
+# home component
+new Vue(
+  el: '#app-home'
+
+  mounted: ->
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
+
+  data:
+    isActive: true
+)
+
+
+# my transactions component
+new Vue(
+  el: '#app-tx'
+
+  mounted: ->
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
+
+  data:
+    isActive: false
+)
+
 
 # search component
-window.searchMy = new Vue(
+new Vue(
   el: '#app-search'
 
-  methods:
-    search: (evt) ->
-      @$bus.$emit 'open-modal-tbd'
+  mounted: ->
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
+
+  data:
+    isActive: false
 )
 
 
 
 # list of stores component
-window.storesMy = new Vue(
+new Vue(
   el: '#app-stores'
 
   mounted: ->
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
     @$bus.$on 'get-store-id-by-file-id', (id, cb) =>
       console.log 'on get-store-id-by-file-id', id
       cb @storeId
@@ -120,16 +114,18 @@ window.storesMy = new Vue(
       return
 
   data:
-    storeId: ''
-    stores: []
+    storeId:   ''
+    storeName: ''
+    stores:    []
+    isActive:  true
 
   props: [ 'selected' ]
 
   methods:
     storeSelected: (evt) ->
-      @storeId = evt.path[1].id
-      console.log '@storeId=', @storeId
-      @$bus.$emit 'activate-app', { app: '#app-files', id: evt.path[1].id }
+      [ @storeId, @storeName ] = [ evt.path[1].id, evt.path[0].innerText ]
+      console.log 'storeId=', @storeId, 'storeName=', @storeName
+      @$bus.$emit 'get-files', @storeId, @storeName
     getStores: ->
       skt.on 'get_stores_returned', (data) =>
         console.log 'server: get_stores_returned=', JSON.stringify(data)
@@ -140,40 +136,61 @@ window.storesMy = new Vue(
 
 
 # list of files component
-window.filesMy = new Vue(
+new Vue(
   el: '#app-files'
 
   mounted: ->
+    @$bus.$on 'get-files', (@storeId, @storeName) =>
+      @getFiles @storeId
+      @$bus.$emit 'activate-app', name: '#app-files'
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
 
   data:
     files: []
+    storeId: ''
+    storeName: ''
+    isActive: false
+
   # # TODO:
-  # computed: tsFixed: ->
-  #   @ts[0..9]
+  # computed:
+  #   ts: ->
+  #     @ts[0..9]
 
   methods:
+    storeComments: (evt) ->
+      console.log 'storeComments=', @storeId
+      @$bus.$emit 'open-modal-tbd', 'Store Comments'
+    storeRating: (evt) ->
+      console.log 'storeRating=', @storeId
+      @$bus.$emit 'open-modal-tbd', 'Store Rating'
+    storePreview: (evt) ->
+      console.log 'storePreview=', @storeId
+      @$bus.$emit 'open-modal-tbd', 'Store View'
     fileComments: (evt) ->
       console.log 'fileComments=', evt.path[7].id
-      @$bus.$emit 'open-modal-tbd'
+      @$bus.$emit 'open-modal-tbd', 'Product Comments'
     fileRating: (evt) ->
       console.log 'fileRating=', evt.path[7].id
-      @$bus.$emit 'open-modal-tbd'
+      @$bus.$emit 'open-modal-tbd', 'Product Rating'
     filePreview: (evt) ->
       console.log 'filePreview=', evt.path[7].id
-      @$bus.$emit 'open-modal-tbd'
+      @$bus.$emit 'open-modal-tbd', 'Product Preview'
       # @$bus.$emit 'open-modal-preview', data: evt.path[7].id
     fileBuy: (evt) ->
-      console.log 'fileBuy=', evt.path[7].id
+      console.log 'fileBuy=', evt.path[8].id
       for _i in @files
-        if _i.id == evt.path[7].id
+        if _i.id == evt.path[8].id
           @$bus.$emit 'open-modal-buy', data: _i
           break
-    getFiles: ->
+    getFiles: (storeId)->
       skt.on 'get_files_returned', (data) =>
         console.log 'server: get_files_returned=', JSON.stringify(data)
         @files = data.files[0].items
         console.log "@files=", @files
-      skt.emit('get_files', { id: storesMy.storeId })
+      skt.emit('get_files', { id: storeId })
 )
 
 
@@ -181,24 +198,26 @@ new Vue(
   el: '#modal-tbd'
 
   mounted: ->
-    @$bus.$on 'open-modal-tbd', (message) =>
-      console.log 'open-modal-tbd:', message
-      @modal()
+    @$bus.$on 'open-modal-tbd', (msg) =>
+      console.log 'open-modal-tbd:', msg
+      @msg = msg
+      @isActive = true
 
   methods:
-    modal: ->
-      modal @$el
     close: ->
-      close @$el
+      @isActive = false
+
+  data:
+    msg: ''
+    isActive: false
 )
 
 
-window.userMy = new Vue(
+new Vue(
   el: '#modal-user'
 
   mounted: ->
     @$bus.$on 'get-user-address', (cb) =>
-      console.log 'on get-user-address', cb
       cb @address
       return
     skt.on 'new_user_connected', (data) =>
@@ -209,8 +228,7 @@ window.userMy = new Vue(
       @balance = data.users[0].balance
       @address = data.users[0].address
     @$bus.$on 'open-modal-user', (message) =>
-      console.log 'open-modal-user:', message
-      @modal()
+      @isActive = true
 
   data:
     name: ''
@@ -218,23 +236,22 @@ window.userMy = new Vue(
     mode: ''
     balance: ''
     address: ''
+    isActive: false
 
   methods:
-    modal: ->
-      modal @$el
     close: ->
-      close @$el
+      @isActive = false
 )
 
 
-window.buyMy = new Vue(
+new Vue(
   el: '#modal-buy'
 
   mounted: ->
-    skt.on 'buy_executed', (data) ->
+    skt.on 'buy_executed', (data) =>
       console.log 'server: buy_executed=', data
       console.log 'step 3 of 3'
-      notifyUser 'success', 'Transaction done - please check your file!', ->
+      @$bus.$emit 'notify_user', 'success', 'Transaction done - please check your file!', ->
         console.log 'buying item done'
 
     @$bus.$on 'open-modal-buy', (msg) =>
@@ -242,6 +259,7 @@ window.buyMy = new Vue(
       @id = msg.data.id
       @name = msg.data.name
       @mime = msg.data.mime
+      @type = msg.data.type
       @price = msg.data.price
       @checked = [ 'email' ]
       @picked = [ '0' ]
@@ -251,7 +269,7 @@ window.buyMy = new Vue(
 
         _cbGetUserAddress = (addr) =>
           @address = addr
-          @modal()
+          @isActive = true
 
         @$bus.$emit 'get-user-address', _cbGetUserAddress
 
@@ -261,26 +279,46 @@ window.buyMy = new Vue(
     id: ''
     name: ''
     mime: ''
+    type: ''
     price: ''
     seller: ''
     checked: [ ]
     picked: [ ]
     address: ''
+    isActive: false
 
   methods:
-    modal: ->
-      modal @$el
-      # TODO:
-      document.querySelector('#witness').checked = true
     close: ->
-      close @$el
+      @isActive = false
     buy: ->
       console.log 'starting buying item'
-      close @$el
-      notifyUser 'success', 'Fetching the file, please wait...', =>
+      @close()
+      @$bus.$emit 'notify_user', 'success', 'Fetching the file, please wait...', =>
         console.log 'step 1 of 3'
-        notifyUser 'success', 'Successful payment, few more secs...', =>
+        @$bus.$emit 'notify_user', 'success', 'Successful payment, few more secs...', =>
           console.log 'sending to server:', { buyer: @address, store_id: @seller, id: @id }
           skt.emit('buy', { buyer: @address, store_id: @seller, id: @id })
           console.log 'step 2 of 3'
+)
+
+
+# notify user toast component
+new Vue(
+  el: '#toast'
+
+  mounted: ->
+    # notify user thru raising toast popup
+    @$bus.$on 'notify_user', (@isSuccess, @msg, cb) =>
+      @isActive = true
+      setTimeout (=>
+        @isActive = false
+        cb()
+        return
+      ), 3000
+      return
+
+  data:
+    msg:       ''
+    isActive:  false
+    isSuccess: true
 )

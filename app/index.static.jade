@@ -19,7 +19,7 @@ html(lang='en')
 
       //- modal popups
       //- user popup
-      #modal-user.modal
+      #modal-user.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
@@ -51,7 +51,7 @@ html(lang='en')
 
 
       //- buy popup
-      #modal-buy.modal
+      #modal-buy.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
@@ -86,38 +86,29 @@ html(lang='en')
 
                 .form-group
                   label.form-switch
-                    input(type='checkbox')
+                    input(type='checkbox', value='upload')
                     i.form-icon
                     | To upload file to my online account
 
                 .form-group
-                  label.form-label Witness Mode 
-                  label.form-radio
-                    input#witness(type='radio', name='witness', value=0, v-model='picked')
+                  label.form-switch
+                    input(type='checkbox', value='witness')
                     i.form-icon
-                    | no
-                  label.form-radio
-                    input(type='radio', name='witness', value=1, v-model='picked')
-                    i.form-icon
-                    | single witness
-                  label.form-radio
-                    input(type='radio', name='witness', value=2, v-model='picked')
-                    i.form-icon
-                    | two witnesses
-                  label.form-radio
-                    input(type='radio', name='witness', value=3, v-model='picked')
-                    i.form-icon
-                    | three witnesses
+                    | Witness Mode
 
           .modal-footer
-            a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Buy') Buy
+            a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Buy') &nbsp;Buy&nbsp;
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Cancel') Cancel
 
 
       //- TBD popup
-      #modal-tbd.modal
+      #modal-tbd.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5 {{ msg }}
 
           .modal-body
             .content
@@ -149,14 +140,13 @@ html(lang='en')
         #app-stores.column.col-3
           dl
             dd(v-for='(item, index) in stores', :id="item.id")
-              //- a(href="#", @click.prevent='storeSelected')
               a(:href="'?' + item.id", @click.prevent='storeSelected')
                 | {{ item.name }}
 
 
         //- right column
         //- home app
-        #app-home.app.column.col-9
+        #app-home.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           h2 Marketplace PoC
           ul
             li
@@ -176,20 +166,19 @@ html(lang='en')
 
 
         //- my transactions app
-        #app-tx.app.column.col-9.inactive
+        #app-tx.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           | My Transactions: TBD
 
 
         //- search app
-        #app-search.app.column.col-9.inactive
+        #app-search.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           .market-title.gradient-shadow(title='Marketplace Search')
             div Marketplace Search
 
           .input-group
             span.input-group-addon Search for:
             input.form-input(style='width: unset', type='text', placeholder='type full or partial file name or #hashtag')
-            //- button.btn.btn-primary.input-group-btn(@click="$bus.$emit('search')") Go!
-            button.btn.btn-primary.input-group-btn(@click="search()") Go!
+            button.btn.btn-primary.input-group-btn(@click="$bus.$emit('open-modal-tbd', 'Search')") &nbsp;Go!&nbsp;
 
           .form-group
             label.form-label By File Types:
@@ -216,10 +205,20 @@ html(lang='en')
 
 
         //- files app
-        #app-files.app.column.col-9.inactive
-          //- h4
-          //-   b
-          //-     | {{ name }}
+        #app-files.app.column.col-9(v-bind:class="{ inactive: !isActive }")
+          h5
+            b
+              | {{ storeName }}
+            | &nbsp;&nbsp;
+            a(href='#', @click.prevent="storeComments()", title="Store Comments")
+              icon(name='commenting', scale='2', label="Store Comments")
+            | &nbsp;&nbsp;
+            a(href='#', @click.prevent="storeRating()", title='Store Rating')
+              icon(name='star', scale='2', label='Store Rating')
+            | &nbsp;&nbsp;
+            a(href='#', @click.prevent="storePreview()", title='Store View')
+              icon(name='eye', scale='2', label='Store View')
+
           table.table.table-striped.table-hover
             thead
               tr
@@ -234,7 +233,8 @@ html(lang='en')
                 td
                   | {{ item.name }}
                 td
-                  | {{ item.mime }}
+                  a(href='#', :title='item.mime')
+                    icon(:name='item.type', scale='2', :label='item.mime')
                 td
                   | {{ item.ts }}
                 td
@@ -243,26 +243,32 @@ html(lang='en')
                   | {{ item.price }}
                 td
                   .popover.popover-left
-                    button.btn.btn-action.btn-primary
-                      i.icon.icon-menu
+                    button.btn.btn-link
+                      icon(name='bars', scale='2', label='Actions')
                     .popover-container
                       .card
                         .card-body
-                          b
-                            | Warning:
-                          | &nbsp;check carefully before buying!
-                        .card-footer
-                          .btn-group.btn-group-block
-                            a.btn.btn-error(href='#', @click.prevent='fileBuy', aria-label='Buy') Buy
-                            a.btn.btn-primary(href='#', @click.prevent='fileComments', aria-label='Comments') Comments
-                            a.btn.btn-primary(href='#', @click.prevent='fileRating', aria-label='Rating') Rating
-                            a.btn.btn-primary(href='#', @click.prevent='filePreview', aria-label='View') View
+                          | &nbsp;&nbsp;
+                          a(href='#', @click.prevent="fileBuy", title='Buy')
+                            icon(name='shopping-cart', scale='2', label='Buy')
+                          | &nbsp;&nbsp;
+                          a(href='#', @click.prevent="fileComments", title="Product Comments")
+                            icon(name='commenting', scale='2', label="Product Comments")
+                          | &nbsp;&nbsp;
+                          a(href='#', @click.prevent="fileRating", title='Product Rating')
+                            icon(name='star', scale='2', label='Product Rating')
+                          | &nbsp;&nbsp;
+                          a(href='#', @click.prevent="filePreview", title='Product View')
+                            icon(name='eye', scale='2', label='Product View')
+                          | &nbsp;&nbsp;
+
 
 
     //- toast notifications
-    #toast.toast.inactive
+    #toast.toast(v-bind:class="{ inactive: !isActive, 'toast-success': isSuccess, 'toast-error': !isSuccess }")
       button.btn.btn-clear.float-right
-      span#toast-msg
+      span
+        | {{ msg }}
 
 
     script(src='/socket.io/socket.io.js')

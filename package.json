@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Marketplace",
   "scripts": {
-    "postinstall": "./scripts/postinstall.sh && exit $?",
+    "postinstall": "./scripts/postinstall.sh && cd ../marketplace_client && npm install && cd -; exit $?",
     "jsbin": "ps -fewwww | grep jsbin | awk '{ print $2 }' | xargs kill -TERM; echo 'starting jsbin on http://localhost:3000'; jsbin &> /dev/null &",
     "test": "echo \"Error: no test specified\" && exit 1",
     "alice": "cd ../marketplace_client; npm run alice; cd -",

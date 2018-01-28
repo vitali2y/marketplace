@@ -9,8 +9,8 @@ cd marketplace
 npm install
 
 # now put some .PDF, .MP3, .AVI, etc files into 3 "stores":
-# ./marketplace_client/store_bob, ./marketplace_client/store_james,
-# and ./marketplace_client/store_ragnar directories
+# ./marketplace_client/dist/linux/store_bob, ./marketplace_client/dist/linux/store_james,
+# and ./marketplace_client/dist/linux/store_ragnar dirs
 
 npm run dev
 ```
@@ -21,6 +21,6 @@ Continue online shopping from automatically opened [Alice's session](http://127.
 
 [Marketplace Client PoC](https://github.com/vitali2y/marketplace_client) project is used as a client app here.
 
-To release the binary builds of server and clients (they will be found under correspondent _dist_ dirs) for both _Linux_ and _Winduz_ to execute next from _marketplace_ dir:
+In order to release the binary builds of server and clients (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_ and _windows_ dirs) to execute next command from _marketplace_ dir:
 
 `npm run release_bin`
