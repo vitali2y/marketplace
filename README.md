@@ -21,6 +21,6 @@ Continue online shopping from automatically opened [Alice's session](http://127.
 
 [Marketplace Client PoC](https://github.com/vitali2y/marketplace_client) project is used as a client app here.
 
-In order to release the binary builds of server and clients (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_ and _windows_ dirs) to execute next command from _marketplace_ dir:
+In order to release the binary builds of server and clients (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_ and _windows_ dirs) to execute next command from _marketplace_ dir, and follow further instructions (also, be aware [this note](https://github.com/vitali2y/marketplace/blob/master/server/server.coffee#L27)):
 
 `npm run release_bin`

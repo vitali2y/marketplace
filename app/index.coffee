@@ -21,6 +21,7 @@ require 'vue-awesome/icons/star'
 require 'vue-awesome/icons/eye'
 require 'vue-awesome/icons/bars'
 
+
 # inter-components global event bus
 bus = new Vue
 Object.defineProperties Vue.prototype, $bus: get: ->
@@ -33,7 +34,7 @@ Object.defineProperties Vue.prototype, $bus: get: ->
 
 # socket.io interaction with server-side
 skt = io.connect('http://localhost:3000')
-skt.emit('new_user', { hash: document.location.href.split('?')[1][0..31] })
+skt.emit('new-user', { hash: document.location.href.split('?')[1][0..31] })
 
 
 # navigation bar component
@@ -104,18 +105,18 @@ new Vue(
       if app.name == @$options.el
         @isActive = true
     @$bus.$on 'get-store-id-by-file-id', (id, cb) =>
-      console.log 'on get-store-id-by-file-id', id
-      cb @storeId
+      console.log 'on get-store-id-by-file-id:', id
+      cb @currentStoreId
       return
     @getStores()
-    skt.on 'new_client_connected', (data) ->
-      console.log 'server: new_client_connected=', data
+    skt.on 'new-client-connected', (data) ->
+      console.log 'on new-client-connected:', data
       @stores = data["stores"]
       return
 
   data:
-    storeId:   ''
-    storeName: ''
+    currentStoreId:   ''
+    currentStoreName: ''
     stores:    []
     isActive:  true
 
@@ -123,15 +124,18 @@ new Vue(
 
   methods:
     storeSelected: (evt) ->
-      [ @storeId, @storeName ] = [ evt.path[1].id, evt.path[0].innerText ]
-      console.log 'storeId=', @storeId, 'storeName=', @storeName
-      @$bus.$emit 'get-files', @storeId, @storeName
+      @currentStoreId = evt.path[1].id
+      for _s in @stores
+        if _s.id == @currentStoreId
+          @currentStoreName = _s.name
+      console.log 'currentStoreId:', @currentStoreId, 'currentStoreName:', @currentStoreName
+      @$bus.$emit 'get-files', @currentStoreId, @currentStoreName
     getStores: ->
-      skt.on 'get_stores_returned', (data) =>
-        console.log 'server: get_stores_returned=', JSON.stringify(data)
+      skt.on 'get-stores-returned', (data) =>
+        console.log 'on get-stores-returned:', JSON.stringify(data)
         @stores = data["stores"]
-        console.log "@stores=", @stores
-      skt.emit('get_stores')
+        console.log "@stores:", @stores
+      skt.emit('get-stores')
 )
 
 
@@ -140,8 +144,8 @@ new Vue(
   el: '#app-files'
 
   mounted: ->
-    @$bus.$on 'get-files', (@storeId, @storeName) =>
-      @getFiles @storeId
+    @$bus.$on 'get-files', (@currentStoreId, @currentStoreName) =>
+      @getFiles @currentStoreId
       @$bus.$emit 'activate-app', name: '#app-files'
     @$bus.$on 'activate-app', (app) =>
       @isActive = false
@@ -150,8 +154,8 @@ new Vue(
 
   data:
     files: []
-    storeId: ''
-    storeName: ''
+    currentStoreId: ''
+    currentStoreName: ''
     isActive: false
 
   # # TODO:
@@ -161,45 +165,43 @@ new Vue(
 
   methods:
     storeComments: (evt) ->
-      console.log 'storeComments=', @storeId
+      console.log 'storeComments:', @currentStoreId
       @$bus.$emit 'open-modal-tbd', 'Store Comments'
     storeRating: (evt) ->
-      console.log 'storeRating=', @storeId
+      console.log 'storeRating:', @currentStoreId
       @$bus.$emit 'open-modal-tbd', 'Store Rating'
-    storePreview: (evt) ->
-      console.log 'storePreview=', @storeId
-      @$bus.$emit 'open-modal-tbd', 'Store View'
     fileComments: (evt) ->
-      console.log 'fileComments=', evt.path[7].id
+      console.log 'fileComments:', evt.path[7].id
       @$bus.$emit 'open-modal-tbd', 'Product Comments'
     fileRating: (evt) ->
-      console.log 'fileRating=', evt.path[7].id
+      console.log 'fileRating:', evt.path[7].id
       @$bus.$emit 'open-modal-tbd', 'Product Rating'
     filePreview: (evt) ->
-      console.log 'filePreview=', evt.path[7].id
+      console.log 'filePreview:', evt.path[7].id
       @$bus.$emit 'open-modal-tbd', 'Product Preview'
       # @$bus.$emit 'open-modal-preview', data: evt.path[7].id
     fileBuy: (evt) ->
-      console.log 'fileBuy=', evt.path[8].id
+      console.log 'fileBuy:', evt.path[8].id
       for _i in @files
         if _i.id == evt.path[8].id
           @$bus.$emit 'open-modal-buy', data: _i
           break
     getFiles: (storeId)->
-      skt.on 'get_files_returned', (data) =>
-        console.log 'server: get_files_returned=', JSON.stringify(data)
+      skt.on 'get-files-returned', (data) =>
+        console.log 'on get-files-returned:', JSON.stringify(data)
         @files = data.files[0].items
-        console.log "@files=", @files
-      skt.emit('get_files', { id: storeId })
+        console.log "@files:", @files
+      skt.emit('get-files', { id: storeId })
 )
 
 
+# TBD popup
 new Vue(
   el: '#modal-tbd'
 
   mounted: ->
     @$bus.$on 'open-modal-tbd', (msg) =>
-      console.log 'open-modal-tbd:', msg
+      console.log 'on open-modal-tbd:', msg
       @msg = msg
       @isActive = true
 
@@ -213,6 +215,7 @@ new Vue(
 )
 
 
+# my info popup
 new Vue(
   el: '#modal-user'
 
@@ -220,8 +223,8 @@ new Vue(
     @$bus.$on 'get-user-address', (cb) =>
       cb @address
       return
-    skt.on 'new_user_connected', (data) =>
-      console.log 'server: new_user_connected=', data
+    skt.on 'new-user-connected', (data) =>
+      console.log 'on new-user-connected:', data
       @name = data.users[0].name
       @email = data.users[0].email
       @mode = data.users[0].mode
@@ -244,18 +247,18 @@ new Vue(
 )
 
 
+# buying item popup
 new Vue(
   el: '#modal-buy'
 
   mounted: ->
-    skt.on 'buy_executed', (data) =>
-      console.log 'server: buy_executed=', data
-      console.log 'step 3 of 3'
-      @$bus.$emit 'notify_user', 'success', 'Transaction done - please check your file!', ->
-        console.log 'buying item done'
-
+    skt.on 'buy-executed', (data) =>
+      console.log 'on buy-executed:', data
+      console.log 'buying step 3 of 3'
+      @$bus.$emit 'notify-user', 'success', 'Transaction done - please check your file!', ->
+        console.log 'buying done'
     @$bus.$on 'open-modal-buy', (msg) =>
-      console.log 'open-modal-buy:', msg.data
+      console.log 'on open-modal-buy:', msg.data
       @id = msg.data.id
       @name = msg.data.name
       @mime = msg.data.mime
@@ -291,14 +294,13 @@ new Vue(
     close: ->
       @isActive = false
     buy: ->
-      console.log 'starting buying item'
+      console.log 'buying starting'
       @close()
-      @$bus.$emit 'notify_user', 'success', 'Fetching the file, please wait...', =>
-        console.log 'step 1 of 3'
-        @$bus.$emit 'notify_user', 'success', 'Successful payment, few more secs...', =>
-          console.log 'sending to server:', { buyer: @address, store_id: @seller, id: @id }
+      @$bus.$emit 'notify-user', 'success', 'Fetching the file, please wait...', =>
+        console.log 'buying step 1 of 3'
+        @$bus.$emit 'notify-user', 'success', 'Successful payment, few more secs...', =>
           skt.emit('buy', { buyer: @address, store_id: @seller, id: @id })
-          console.log 'step 2 of 3'
+          console.log 'buying step 2 of 3'
 )
 
 
@@ -308,7 +310,7 @@ new Vue(
 
   mounted: ->
     # notify user thru raising toast popup
-    @$bus.$on 'notify_user', (@isSuccess, @msg, cb) =>
+    @$bus.$on 'notify-user', (@isSuccess, @msg, cb) =>
       @isActive = true
       setTimeout (=>
         @isActive = false

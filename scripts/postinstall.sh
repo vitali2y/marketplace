@@ -21,7 +21,7 @@ rm -f ./*.css
 ln -s ../../node_modules/spectre.css/dist/spectre.css
 cd -
 
-mkdir -p cd ./app/vue-awesome/icons
+mkdir -p ./app/vue-awesome/icons
 cd ./app/vue-awesome/icons
 rm -f ./*.js
 ln -s ../../../node_modules/vue-awesome/icons/question-circle-o.js
