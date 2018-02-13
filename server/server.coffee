@@ -2,16 +2,13 @@
 # Marketplace Server
 #
 
+crypto = require "crypto"
 express = require "express"
 path = require "path"
 io = require "socket.io"
 low = require "lowdb"
 # TODO: to use FileAsync
 FileSync = require "lowdb/adapters/FileSync"
-
-# unique counter of transactions
-counter = low(new FileSync("counter.json"))
-counter.defaults(counter: 0).write()
 
 # init local db with exist users
 users = low(new FileSync("users.json"))
@@ -57,6 +54,14 @@ module.exports = (port, path, cb) ->
         { users: users.get("users").filter({ id: userHash.hash }).value() }
       return
 
+    # returning partial info about seller to web user
+    skt.on 'get-seller', (sellerId) ->
+      # TODO: to return only required fields
+      console.log 'on get-seller:', users.get("users").filter({ id: sellerId }).value(), 'sellerId:', sellerId
+      skt.emit 'get-seller-returned',
+        { seller: users.get("users").filter({ id: sellerId }).value() }
+      return
+
     # get list of stores
     skt.on 'get-stores', ->
       skt.emit 'get-stores-returned',
@@ -76,13 +81,13 @@ module.exports = (port, path, cb) ->
       # TODO: to clean up the tx when both parties obtained it
       return
 
-    # request for buying some file
+    # request for buying some file from web user
     skt.on 'buy', (txReplica) ->
       console.log 'on buy:', txReplica
       # forming the transaction
       for _i in stores.get("stores").filter({ id: txReplica.store_id }).value()[0].items
         # searching for file's price ...
-        if _i.id == txReplica.id
+        if _i.id == txReplica.file_id
           console.log 'price:', _i.price
           txReplica.price = _i.price
           # ... and, seller's id
@@ -91,20 +96,19 @@ module.exports = (port, path, cb) ->
           _sellerAddress = users.get("users").filter({ id: _sellerId }).value()[0].address
           console.log 'seller address:', _sellerAddress
           # ... and, getting unique tx id
-          counter.update('counter', (n) ->
-            n += 1
-          ).write()
-          _txId = counter.get("counter").value()
-          txReplica.id = _txId
-          console.log 'tx id:', _txId
+          txReplica.id = crypto.randomBytes(32).toString('hex')
           # keeping transaction temp until both parties will request for it
           console.log 'txReplica:', txReplica
-          txs[_txId] = txReplica
+          txs[txReplica.id] = txReplica
           # TODO: to chk clients' IPs for security
-          skt.emit 'buy-executed', _txId
-          skt.broadcast.emit 'transaction-broadcasted', id: _txId, parties: [ txReplica.buyer, _sellerAddress ]
+          # skt.emit 'buy-executed', txReplica.id
+          skt.broadcast.emit 'transaction-broadcasted', id: txReplica.id, parties: [ txReplica.buyer, _sellerAddress ]
           break
       return
+
+    skt.on 'success-transaction', (txId, txAll) ->
+      console.log 'on success-transaction:', txId, txAll
+      skt.broadcast.emit 'buy-executed', txId, txAll   # dirty notifying everyone (incl web user) about executed transaction
 
     # TODO:
     skt.on 'disconnected', ->

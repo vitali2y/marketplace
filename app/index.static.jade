@@ -52,14 +52,14 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- buy popup
+      //- purchase popup
       #modal-buy.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 Buying Item
+            .modal-title.h5 Purchase Item
 
           .modal-body
             .content
@@ -99,7 +99,7 @@ html(lang='en')
                     | Witness Mode
 
           .modal-footer
-            a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Buy') &nbsp;Buy&nbsp;
+            a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Purchase') Purchase
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Cancel') Cancel
 
 
@@ -153,27 +153,46 @@ html(lang='en')
         //- right column
         //- home app
         #app-home.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          h2 Marketplace PoC
+          h2 Marketplace Proof-of-Concept
           ul
             li
-              | List of registered online stores on the left side.
+              | List of registered online stores on the left side - select any in order to select and buy digital goods,
             li
               b
                 | My Info
-              | &nbsp;provides info about currently logged in user (buyer).
+              | &nbsp;popup provides general information about currently logged in user (buyer), such as amount of available coins, etc,
             li
               b
                 | My Transactions
-              | &nbsp;provides information about already executed payments.
+              | &nbsp;contains list of already successfully executed transactions,
             li
               b
                 | Search
-              | &nbsp;might be used for searching the products by full or partial file, different types, etc.
+              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc.
 
 
         //- my transactions app
         #app-tx.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          | My Transactions: TBD
+          h6
+            b
+              | My Transactions
+
+          table.table.table-striped.table-hover
+            thead
+              tr
+                th Id
+                th Created
+                th Content
+            tbody
+              tr(v-for='(item, index) in txs', :id="item.id")
+                td(:title="item.id")
+                  .overme(style="width: 350px")
+                    | {{ item.id }}
+                td
+                  | {{ item.ts }}
+                td.overme(:title="item.all")
+                  .overme(style="width: 550px")
+                    | {{ item.all }}
 
 
         //- search app
@@ -181,13 +200,13 @@ html(lang='en')
           .market-title.gradient-shadow(title='Marketplace Search')
             div Marketplace Search
 
-          .input-group
+          .input-group(style="padding-top: 10px")
             span.input-group-addon Search for:
             input.form-input(style='width: unset', type='text', placeholder='type full or partial file name or #hashtag')
             button.btn.btn-primary.input-group-btn(@click="$bus.$emit('open-modal-tbd', 'Search')") &nbsp;Go!&nbsp;
 
           .form-group
-            label.form-label By File Types:
+            label.form-label Also, by file category too:
             label.form-radio
               input(type='radio', name='file-type', checked='')
               i.form-icon
@@ -216,8 +235,8 @@ html(lang='en')
             b
               | {{ currentStoreName }}
             | &nbsp;&nbsp;
-            a(href='#', @click.prevent="storeComments()", title="Store Comments")
-              icon(name='commenting', scale='2', label="Store Comments")
+            a(href='#', @click.prevent="storeComments()", title="Others About Store")
+              icon(name='commenting', scale='2', label="Others About Store")
             | &nbsp;&nbsp;
             a(href='#', @click.prevent="storeRating()", title='Store Rating')
               icon(name='star', scale='2', label='Store Rating')
@@ -255,16 +274,15 @@ html(lang='en')
                           a(href='#', @click.prevent="fileBuy", title='Buy')
                             icon(name='shopping-cart', scale='2', label='Buy')
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileComments", title="Product Comments")
-                            icon(name='commenting', scale='2', label="Product Comments")
+                          a(href='#', @click.prevent="fileComments", title="Others About Product")
+                            icon(name='commenting', scale='2', label="Others About Product")
                           | &nbsp;&nbsp;
                           a(href='#', @click.prevent="fileRating", title='Product Rating')
                             icon(name='star', scale='2', label='Product Rating')
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="filePreview", title='Product View')
-                            icon(name='eye', scale='2', label='Product View')
+                          a(href='#', @click.prevent="filePreview", title='Product Preview')
+                            icon(name='eye', scale='2', label='Product Preview')
                           | &nbsp;&nbsp;
-
 
 
     //- toast notifications
@@ -278,4 +296,4 @@ html(lang='en')
     script(type='text/javascript', src='/js/vendor.js')
     script(type='text/javascript', src='/js/app.js')
     script.
-      require('index')
+      document.addEventListener("DOMContentLoaded", function(event) { require('index') })
