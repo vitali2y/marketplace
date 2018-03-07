@@ -11,6 +11,8 @@ module.exports =
         'css/app.css': /^app/
         'css/vendor.css': /^(vendor\/css)/
 
+  plugins:
+
     static_jade:
       extension: ".static.jade"
       path:      [ /^app/ ]
