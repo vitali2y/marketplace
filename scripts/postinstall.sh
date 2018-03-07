@@ -3,9 +3,17 @@
 rm -f ./marketplace_client
 ln -s ../marketplace_client
 
+rm -f ./marketplace_rendezvous
+ln -s ../marketplace_rendezvous
+
 cd ./server
 rm -f ./public
 ln -s ../public
+cd -
+
+cd ./browser
+rm proto.coffee
+ln -s ../marketplace_client/util/proto.coffee
 cd -
 
 mkdir -p ./vendor/js
@@ -13,12 +21,6 @@ cd ./vendor/js
 rm -f ./*.js
 ln -s ../../node_modules/vue/dist/vue.js
 ln -s ../../node_modules/vue-awesome/dist/vue-awesome.js
-cd -
-
-mkdir -p ./vendor/css
-cd ./vendor/css
-rm -f ./*.css
-ln -s ../../node_modules/spectre.css/dist/spectre.css
 cd -
 
 mkdir -p ./app/vue-awesome/icons

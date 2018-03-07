@@ -2,7 +2,7 @@
 # Marketplace Front-End
 #
 
-require('vueify/lib/insert-css')
+require "vueify/lib/insert-css"
 
 # importing particular icons from Font Awesome set
 Icon = require 'vue-awesome/components/Icon'
@@ -21,6 +21,8 @@ require 'vue-awesome/icons/star'
 require 'vue-awesome/icons/eye'
 require 'vue-awesome/icons/bars'
 
+Core = require "../browser/core"
+
 
 # inter-components global event bus
 bus = new Vue
@@ -32,9 +34,44 @@ Object.defineProperties Vue.prototype, $bus: get: ->
 # Search = require './components/Search.vue'  # template: '<div>search</div>'
 
 
-# socket.io interaction with server-side
-skt = io.connect('http://localhost:3000')
-skt.emit('new-user', { hash: document.location.href.split('?')[1][0..31] })
+# bridge component for collaboration with external services thru libp2p stack
+bridge = new Vue(
+  el: '#bridge'
+
+  mounted: ->
+    @hostPeerB58Id  = document.location.href.split('?')[1][0..45]
+    @$bus.$on 'start-buy', (@tx, cb) =>
+      console.log 'purchasing: 3 of Y:', @tx
+      cb 'Initiating a purchase transaction...'
+    @$bus.$on 'get-all-txs', (cb) =>
+      @isAllTxsRequest = true
+    @$bus.$on 'get-my-info', (cb) =>
+      @isMyInfoRequest = true
+
+  # see @core.bridge
+  data:
+    tx: '{}'           # purchase transaction, if any
+    txs: false         # all executed transactions request, if any
+    hostPeerB58Id : '' # my host (on the client, not this browser's) peer id
+    isMyInfoRequest: false
+    isAllTxsRequest: false
+
+  methods:
+    setMyInfo: (data) ->
+      @$bus.$emit 'get-my-info-received', data
+    setSellerInfo: (data) ->
+      @$bus.$emit 'seller-info-received', data
+    informPurchaseStatus: (data) ->
+      @$bus.$emit 'notify-user', 'success', data, ->
+        console.log 'purchasing:', data
+    setAllTxs: (txs) ->
+      @$bus.$emit 'get-all-txs-received', txs
+)
+
+
+# starting up the node inside the browser
+startNode new Core(bridge), (err) ->
+  console.log "starting browser's node:", err
 
 
 # navigation bar component
@@ -73,8 +110,14 @@ new Vue(
       @isActive = false
       if app.name == @$options.el
         @isActive = true
-    @$bus.$on 'notify-txs', (@txs) =>
-      console.log 'on notify-txs:', @txs
+        @$bus.$emit 'get-all-txs'
+    @$bus.$on 'get-tx', (txId) =>
+      for t in @txs
+        if txId == t.id
+          @$bus.$emit 'get-tx-returned', t
+    @$bus.$on 'get-all-txs-received', (txs) =>
+      console.log 'on get-all-txs-received:', txs
+      @txs = JSON.parse(txs).data
       # sorting by timestamp
       @txs.sort @sortByProperty('ts')
       # TODO: how to do it better?
@@ -104,6 +147,8 @@ new Vue(
     sortByProperty: (prop) ->
       (x, y) ->
         if x[prop] == y[prop] then 0 else if x[prop] > y[prop] then -1 else 1
+    txView: (evt) ->
+      @$bus.$emit "open-modal-txview", evt.path[4].id
 )
 
 
@@ -122,27 +167,32 @@ new Vue(
 )
 
 
-
 # list of stores component
-new Vue(
+myStores = new Vue(
   el: '#app-stores'
 
   mounted: ->
-    @getStores()
     @$bus.$on 'activate-app', (app) =>
       @isActive = false
       if app.name == @$options.el
         @isActive = true
-    @$bus.$on 'get-seller-id-by-file-id', (id, cb) =>
-      console.log 'on get-seller-id-by-file-id:', id
-      for _s in @stores
-        if _s.id == @currentStoreId
-          cb _s.id, _s.user_id
-          return
-    skt.on 'new-client-connected', (data) ->
-      console.log 'on new-client-connected:', data
-      @stores = data["stores"]
-      return
+    @$bus.$on 'get-seller-by-file-id', (id, cb) =>
+      console.log 'on get-seller-by-file-id:', id
+      for s in @stores
+        for i in s.items
+          if i.id == id
+            cb s.id, s.user_id, s.name
+            return
+    @$bus.$on 'seller-info-received', (data) =>
+      console.log 'on seller-info-received:', data
+      i = 0
+      for s in @stores
+        if s?
+          if s.id == data.stores[0].id
+            @stores.splice(i, 1)
+            break
+          i+=1
+      @stores.push data.stores[0]
 
   data:
     currentStoreId:   ''
@@ -153,19 +203,17 @@ new Vue(
   props: [ 'selected' ]
 
   methods:
+    getFiles: (selectedStoreId) ->
+      for s in @stores
+        if s.id == selectedStoreId
+          return s.items
     storeSelected: (evt) ->
       @currentStoreId = evt.path[1].id
-      for _s in @stores
-        if _s.id == @currentStoreId
-          @currentStoreName = _s.name
+      for s in @stores
+        if s.id == @currentStoreId
+          @currentStoreName = s.name
       console.log 'currentStoreId:', @currentStoreId, 'currentStoreName:', @currentStoreName
-      @$bus.$emit 'get-files', @currentStoreId, @currentStoreName
-    getStores: ->
-      skt.on 'get-stores-returned', (data) =>
-        console.log 'on get-stores-returned:', JSON.stringify(data)
-        @stores = data["stores"]
-        console.log "@stores:", @stores
-      skt.emit('get-stores')
+      @$bus.$emit 'get-files', @currentStoreId, @currentStoreName, @getFiles(@currentStoreId)
 )
 
 
@@ -174,8 +222,7 @@ new Vue(
   el: '#app-files'
 
   mounted: ->
-    @$bus.$on 'get-files', (@currentStoreId, @currentStoreName) =>
-      @getFiles @currentStoreId
+    @$bus.$on 'get-files', (@currentStoreId, @currentStoreName, @files) =>
       @$bus.$emit 'activate-app', name: '#app-files'
     @$bus.$on 'activate-app', (app) =>
       @isActive = false
@@ -196,20 +243,19 @@ new Vue(
   methods:
     storeComments: (evt) ->
       console.log 'storeComments:', @currentStoreId
-      @$bus.$emit 'open-modal-tbd', 'Others About Store'
+      @$bus.$emit 'open-modal-tbd', 'Others Talk About Store'
     storeRating: (evt) ->
       console.log 'storeRating:', @currentStoreId
       @$bus.$emit 'open-modal-tbd', 'Store Rating'
     fileComments: (evt) ->
       console.log 'fileComments:', evt.path[7].id
-      @$bus.$emit 'open-modal-tbd', 'Others About Product'
+      @$bus.$emit 'open-modal-tbd', 'Others Talk About Product'
     fileRating: (evt) ->
       console.log 'fileRating:', evt.path[7].id
       @$bus.$emit 'open-modal-tbd', 'Product Rating'
     filePreview: (evt) ->
       console.log 'filePreview:', evt.path[7].id
       @$bus.$emit 'open-modal-tbd', 'Product Preview'
-      # @$bus.$emit 'open-modal-preview', data: evt.path[7].id
     fileBuy: (evt) ->
       # TODO: redo
       _id = ''
@@ -222,12 +268,6 @@ new Vue(
         if _i.id == _id
           @$bus.$emit 'open-modal-buy', data: _i
           break
-    getFiles: (storeId)->
-      skt.on 'get-files-returned', (data) =>
-        console.log 'on get-files-returned:', JSON.stringify(data)
-        @files = data.files[0].items
-        console.log "@files:", @files
-      skt.emit('get-files', { id: storeId })
 )
 
 
@@ -251,6 +291,194 @@ new Vue(
 )
 
 
+# network map popup
+new Vue(
+  el: '#modal-map'
+
+  mounted: ->
+    @$bus.$on 'open-modal-map', =>
+      console.log 'on open-modal-map'
+      @isActive = true
+      @render()
+  
+  methods:
+    close: ->
+      @isActive = false
+    render: ->
+
+      # TODO: do it in Vue style?
+      # TODO: is it possible to use "vue-awesome" instead of current "font-awesome.css"?
+      optionsMap =
+        groups:
+          browsers:
+            shape: 'icon'
+            icon:
+              face: 'FontAwesome'
+              code: '\uf108'
+              size: 50
+              color: 'red'
+          buyers:
+            shape: 'icon'
+            icon:
+              face: 'FontAwesome'
+              code: '\uf07a'
+              size: 50
+              color: 'red'
+          sellers:
+            shape: 'icon'
+            icon:
+              face: 'FontAwesome'
+              code: '\uf0ac'
+              size: 50
+              color: 'orange'
+          witnesses:
+            shape: 'icon'
+            icon:
+              face: 'FontAwesome'
+              code: '\uf0a0'
+              size: 50
+              color: 'limegreen'
+
+      # create an array with nodes
+      nodesArray = [
+        {
+          id: 1
+          label: "Alice's browser"
+          title: 'This is a marketplace under your browser'
+          group: 'browsers'
+        }
+        {
+          id: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          label: 'Alice'
+          title: 'Node: QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61, balance: X'
+          group: 'buyers'
+        }
+        {
+          id: "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h"
+          label: 'Bob'
+          title: 'Node: QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h, balance: X'
+          group: 'sellers'
+        }
+        {
+          id: "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg"
+          label: 'Tom'
+          title: 'Node: Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg, balance: X'
+          group: 'sellers'
+        }
+        {
+          id: "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL"
+          label: 'James'
+          title: 'Node: QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL, balance: X'
+          group: 'sellers'
+        }
+        {
+          id: "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ"
+          label: 'CL-1'
+          title: 'Node: QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ, balance: X'
+          group: 'witnesses'
+        }
+      ]
+      nodes = new (vis.DataSet)(nodesArray)
+
+      # create an array with edges
+      edgesArray = [
+        {
+          from: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          to: 1
+          # arrows: 'to, from'
+          dashes: true
+        }
+        {
+          from: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          to: "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h"
+        }
+        {
+          from: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          to: "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg"
+        }
+        {
+          from: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          to: "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL"
+        }
+        {
+          from: "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61"
+          to: "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ"
+        }
+        {
+          from: "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h"
+          to: "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL"
+        }
+        {
+          from: "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h"
+          to: "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ"
+        }
+        {
+          from: "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg"
+          to: "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h"
+        }
+        {
+          from: "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg"
+          to: "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL"
+        }
+        {
+          from: "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg"
+          to: "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ"
+        }
+        {
+          from: "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL"
+          to: "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ"
+        }
+      ]
+      edges = new (vis.DataSet)(edgesArray)
+
+      # re-render map dynamically
+      rerender = ->
+        nodes.clear()
+        edges.clear()
+        nodes.add nodesArray
+        edges.add edgesArray
+        # network.stabilize()
+        return
+
+      # create a network
+      containerMap = document.getElementById('network-map')
+      dataMap = 
+        nodes: nodesArray
+        edges: edgesArray
+      networkMap = new (vis.Network)(containerMap, dataMap, optionsMap)
+      networkMap.on 'click', (params) ->
+        console.log 'clicked on node:', @getNodeAt(params.pointer.DOM)
+        return
+      rerender()
+
+  data:
+    isActive: false
+    # users: [ "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61": "Alice", "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h": "Bob", "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg": "Tom", "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL": "James", "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ": "CL-1" ]
+)
+
+
+# login as popup
+new Vue(
+  el: '#modal-loginas'
+
+  mounted: ->
+    @$bus.$on 'open-modal-loginas', =>
+      console.log 'on open-modal-loginas'
+      @isActive = true
+
+  methods:
+    close: ->
+      @isActive = false
+    loginAs: ->
+      console.log 'loginAs()'
+      q = document.getElementById("loginas")
+      location.href = location.href.split("?")[0] + "?" + q.options[q.selectedIndex].id
+
+  data:
+    isActive: false
+)
+
+
 # my info popup
 new Vue(
   el: '#modal-user'
@@ -259,15 +487,16 @@ new Vue(
     @$bus.$on 'get-user-address', (cb) =>
       cb @address
       return
-    skt.on 'new-user-connected', (data) =>
-      console.log 'on new-user-connected:', data
-      @name = data.users[0].name
-      @email = data.users[0].email
-      @mode = data.users[0].mode
-      @balance = data.users[0].balance
-      @address = data.users[0].address
-    @$bus.$on 'open-modal-user', (message) =>
+    @$bus.$on 'get-my-info-received', (user) =>
+      console.log 'on get-my-info-received:', user
+      @name = user.name
+      @email = user.email
+      @mode = user.mode
+      @balance = user.balance
+      @address = user.id
       @isActive = true
+    @$bus.$on 'open-modal-user', (message) =>
+      @$bus.$emit 'get-my-info'
 
   data:
     name: ''
@@ -288,16 +517,6 @@ new Vue(
   el: '#modal-buy'
 
   mounted: ->
-    skt.on 'buy-executed', (txId, txAll) =>
-      console.log 'on buy-executed:', txId, 'txAll:', txAll
-      console.log 'purchase step 3 of 3'
-      @$bus.$emit 'notify-txs', txAll
-      @$bus.$emit 'notify-user', 'success', "Transaction #{txId} done - please check your file!", ->
-        console.log 'purchase completed'
-    skt.on 'get-seller-returned', (msg) =>
-      console.log 'on get-seller-returned:', msg
-      @seller = msg.seller[0].address
-      @isActive = true
     @$bus.$on 'open-modal-buy', (msg) =>
       console.log 'on open-modal-buy:', msg.data
       @id = msg.data.id
@@ -308,14 +527,10 @@ new Vue(
       @checked = [ 'email' ]
       @picked = [ '0' ]
 
-      @$bus.$emit('get-seller-id-by-file-id', @id, (@store_id, sellerId) =>
-        console.log 'sellerId=', sellerId
-        skt.emit('get-seller', sellerId)
-
-        _cbGetBuyerAddress = (addr) =>
+      @$bus.$emit('get-seller-by-file-id', @id, (@store_id, @sellerAddress, @sellerName) =>
+        @$bus.$emit 'get-user-address', (addr) =>
           @address = addr
-
-        @$bus.$emit 'get-user-address', _cbGetBuyerAddress
+        @isActive = true
       )
 
   data:
@@ -324,7 +539,8 @@ new Vue(
     mime: ''
     type: ''
     price: ''
-    seller: ''
+    sellerName: ''
+    sellerAddress: ''
     store_id: ''
     checked: [ ]
     picked: [ ]
@@ -335,13 +551,38 @@ new Vue(
     close: ->
       @isActive = false
     buy: ->
-      console.log 'purchase starting'
       @close()
-      @$bus.$emit 'notify-user', 'success', 'Fetching the file, please wait...', =>
-        console.log 'purchase step 1 of 3'
-        @$bus.$emit 'notify-user', 'success', 'Successful payment, few more secs...', =>
-          skt.emit('buy', { buyer: @address, store_id: @store_id, file_id: @id })
-          console.log 'purchase step 2 of 3'
+      @$bus.$emit 'notify-user', 'success', 'Preparing for purchase transaction, please wait...', =>
+        console.log 'purchasing: 1 of Y'
+        @$bus.$emit 'start-buy', JSON.stringify({ buyer: @address, seller: @sellerAddress, price: @price, store_id: @store_id, file_id: @id }), (msg) =>
+          console.log 'purchasing: 2 of Y:', msg
+          @$bus.$emit 'notify-user', 'success', msg, =>
+            console.log 'purchasing: 5 of Y'
+)
+
+
+# view transaction popup
+new Vue(
+  el: '#modal-txview'
+
+  mounted: ->
+    @$bus.$on 'get-tx-returned', (txBody) =>
+      delete txBody.all
+      # TODO: how to ignore 'ts' conversion?
+      @txContent = JSON.stringify(txBody, null, 2)
+      @isActive = true
+    @$bus.$on 'open-modal-txview', (@txId) =>
+      console.log 'on open-modal-txview:', @txId
+      @$bus.$emit 'get-tx', @txId
+
+  data:
+    txId: ''
+    txContent: ''
+    isActive: false
+
+  methods:
+    close: ->
+      @isActive = false
 )
 
 
