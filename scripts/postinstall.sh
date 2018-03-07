@@ -45,3 +45,5 @@ cd ./app/vue-awesome
 rm -f ./components
 ln -s ../../node_modules/vue-awesome/components
 cd -
+
+mkdir -p ./public/js
