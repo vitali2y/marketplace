@@ -14,7 +14,7 @@
     "rendezvous": "cd ../marketplace_rendezvous; npm run run; cd -",
     "libp2p-bundle": "./node_modules/.bin/coffee -c ./browser/libp2p-browser-bundle.coffee ./browser/proto.coffee ./browser/libp2p-bundle.coffee && ./node_modules/.bin/browserify ./browser/libp2p-browser-bundle.js > ./public/js/libp2p-bundle.js",
     "build": "npm run libp2p-bundle && NODE_ENV=development LOGGY_STACKS=1 ./node_modules/.bin/brunch w",
-    "server": "(cd ./server && $PRJ_ROOT/node_modules/.bin/coffee ./server.coffee && cd -)",
+    "server": "(cd ./server && ../node_modules/.bin/coffee ./server.coffee && cd -)",
     "dev": "./node_modules/.bin/concurrently --success last --names 'RNDZ,BUILD,SRV,BOB,TOM,JAMES,CL-1,ALICE' --prefix '{time}-{name}' -t HH:mm:ss --prefix-colors cyan,magenta,yellow,blue,white,gray,green,red 'npm run rendezvous' 'npm run build' 'npm run server' 'npm run bob' 'npm run tom' 'npm run james' 'npm run cl-1' 'npm run alice'",
     "open": "hs -p 3000 ./public",
     "backup": "F=$npm_package_name$(date +%y%m%d-%H%M).tbz; tar cvfjh ../$F . --exclude=./node_modules --exclude=./marketplace_client/node_modules --exclude=./marketplace_rendezvous/node_modules --exclude=./build --exclude=./marketplace_client/build --exclude=./.git --exclude=./marketplace_client/.git --exclude=./marketplace_rendezvous/.git --exclude=./marketplace_client/dist/*/store_*; echo 'ready: ../'$F",
