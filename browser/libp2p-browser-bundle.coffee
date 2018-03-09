@@ -21,7 +21,7 @@ window.startNode = (@core, cb) ->
   # request for my own info
   requestMyInfo = ->
     hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
-    hostPeerInfo = new PeerInfo(hostId)     
+    hostPeerInfo = new PeerInfo(hostId)
     browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_MY_INFO, (err, connOut) =>
       console.log 'browserPeerNode=', browserPeerNode
       if err is null
@@ -162,7 +162,7 @@ window.startNode = (@core, cb) ->
       if @core.getAllTxsRequest()
         # sending request to host node for getting all transactions
         hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
-        hostPeerInfo = new PeerInfo(hostId)         
+        hostPeerInfo = new PeerInfo(hostId)
         browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_ALL_TXS, (err, connOut) =>
           if err is null
             tx = { data: 'something' }

@@ -7,9 +7,7 @@
 rm -rf ./build
 mkdir ./build
 cp ./package.json ./build
-cp -r ./public ./build
-
-if [ $? -ne 0 ]; then echo 'failed!!!'; cd -; exit 1; fi
+cp -r ./public ./build; if [ $? -ne 0 ]; then echo 'failed!!!'; cd -; exit 1; fi
 
 (cd ./build &&
 ../node_modules/.bin/coffee -o . -c ../server/*.coffee &&
