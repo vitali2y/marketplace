@@ -24,6 +24,6 @@ Continue online shopping from automatically opened [Alice's session](http://127.
 
 [Decentralized Marketplace Rendezvous Server (PoC)](https://github.com/vitali2y/marketplace_rendezvous) project is used here for discovery of other decentralized nodes.
 
-In order to release the binary builds of server and clients (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_ and _windows_ dirs) just execute next command from root _marketplace_ dir, and follow further instructions:
+In order to release the binary builds of both server and clients (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_ and _windows_ dirs) just execute next command from root _marketplace_ dir, and follow further instructions:
 
-`npm run release_bin`
+`npm run release`

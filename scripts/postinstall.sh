@@ -1,5 +1,9 @@
 #!/bin/sh
 
+#
+# Postinstall script
+#
+
 rm -f ./marketplace_client
 ln -s ../marketplace_client
 

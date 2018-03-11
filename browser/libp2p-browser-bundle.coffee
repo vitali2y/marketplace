@@ -45,9 +45,8 @@ window.startNode = (@core, cb) ->
     if err
       cb err
       return
-    # TODO: how to prevent this multiaddr hardcode?
+    # NOTE: be aware this localhost address will be automatically replaced to external one during 'npm run release'
     peerInfo.multiaddrs.add multiaddr '/dns4/localhost/tcp/9090/ws/p2p-websocket-star'
-    # peerInfo.multiaddrs.add multiaddr '/dns4/ws-star-signal-4.servep2p.com/tcp/443/wss/p2p-websocket-star'
     ws = new WSStar(id: peerInfo)
     mdns = new MulticastDNS(peerInfo, { interval: 2000 })
     modules = 
