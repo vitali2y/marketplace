@@ -8,4 +8,7 @@ node_modules
 app/vue-awesome
 server/public
 marketplace_client
+marketplace_rendezvous
 package-lock.json
+browser/proto.coffee
+browser/*.js

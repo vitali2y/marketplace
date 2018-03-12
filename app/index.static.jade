@@ -7,12 +7,23 @@ html(lang='en')
   head
     meta(charset='utf-8')
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
-    title Marketplace PoC
-    meta(name='description', content='My Marketplace')
-    meta(name='keywords', content='marketplace, platform, p2p, decentralized')
+    title Decentralized Marketplace (PoC)
+    meta(name='description', content='Decentralized Marketplace (PoC)')
+    meta(name='keywords', content='marketplace, platform, p2p, libp2p, decentralized')
     link(href='https://fonts.googleapis.com/css?family=Roboto+Slab', rel='stylesheet')
-    link(rel='stylesheet', href='/css/vendor.css')
+
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/spectre.css/0.5.1/spectre.min.css')
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css')
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css')
+
+    script(type='text/javascript', src='https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js')
+
+    //- link(rel='stylesheet', href='/css/vendor.css')
     link(rel='stylesheet', href='/css/app.css')
+
+    script(type='text/javascript', src='/js/vendor.js')
+    script(type='text/javascript', src='/js/libp2p-bundle.js')
+    script(type='text/javascript', src='/js/app.js')
 
   body
     .container
@@ -52,7 +63,7 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- purchase popup
+      //- purchase item popup
       #modal-buy.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
@@ -72,13 +83,16 @@ html(lang='en')
                   label.form-label(for='modal-buy-balance') Price
                   .has-icon-right
                     input#modal-buy-balance.form-input(v-model='price', type='text', disabled)
-                    i.form-icon.icon.icon-check(style='color: green')
 
                 .form-group
-                  label.form-label(for='modal-buy-seller') Seller Address
+                  label.form-label(for='modal-buy-seller-name') Seller
                   .has-icon-right
-                    input#modal-buy-seller.form-input(v-model='seller', type='text', disabled)
-                    i.form-icon.icon.icon-emoji(style='color: green')
+                    input#modal-buy-seller-name.form-input(v-model='sellerName', type='text', disabled)
+
+                .form-group
+                  label.form-label(for='modal-buy-seller-address') Seller Address
+                  .has-icon-right
+                    input#modal-buy-seller-address.form-input(v-model='sellerAddress', type='text', disabled)
 
                 .form-group
                   label.form-switch
@@ -91,12 +105,6 @@ html(lang='en')
                     input(type='checkbox', value='upload')
                     i.form-icon
                     | To upload file to my online account
-
-                .form-group
-                  label.form-switch
-                    input(type='checkbox', value='witness')
-                    i.form-icon
-                    | Witness Mode
 
           .modal-footer
             a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Purchase') Purchase
@@ -120,6 +128,75 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
+      //- network map popup
+      #modal-map.modal(v-bind:class="{ active: isActive }")
+        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5 Network Map
+
+          .modal-body
+            .content
+              #network-map
+                .vis-network(tabindex='900', style='position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;')
+                  canvas(width='100%', height='100%', style='position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;')
+              #network-map-legend(style="display: inline-flex")
+                | Legend:&nbsp;&nbsp;
+                div(style='color: red') &#x25C6;
+                | &nbsp;buyer&nbsp;|&nbsp;
+                div(style='color: orange') &#x25C6;
+                | &nbsp;seller&nbsp;|&nbsp;
+                div(style='color: limegreen') &#x25C6;
+                | &nbsp;witness
+
+          .modal-footer
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
+
+
+      //- login as popup
+      #modal-loginas.modal(v-bind:class="{ active: isActive }")
+        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5 Login As
+
+          .modal-body
+            .content
+              .input-group
+                span.input-group-addon Select user:
+                select#loginas.form-select.select-lg
+                  option(id="QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61") Alice (buyer)
+                  option(id="QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h") Bob (seller)
+                  option(id="Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg") Tom (seller)
+                  option(id="QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL") James (seller)
+                  option(id="QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ") CL-1 (witness)
+
+          .modal-footer
+            a.btn.btn-error(href='#', v-on:click='loginAs()', aria-label='Login') Login
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
+
+
+      //- view transaction popup
+      #modal-txview.modal(v-bind:class="{ active: isActive }")
+        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5 Transaction # {{ txId }}
+
+          .modal-body
+            .content
+              textarea(readonly, rows='13', cols='62', style='background-color: rgb(242, 242, 255); resize: none;') {{ txContent }}
+
+          .modal-footer
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
+
+
       //- top navigation bar
       #navbar.columns
         .column
@@ -132,17 +209,21 @@ html(lang='en')
               | &nbsp;|&nbsp;
               a(v-on:click="app('tx')") My Transactions
               | &nbsp;|&nbsp;
+              a(v-on:click="modal('map')") Network Map
+              | &nbsp;|&nbsp;
               a(v-on:click="app('search')") Search
+              | &nbsp;|&nbsp;
+              a(v-on:click="modal('loginas')") Login As
               | &nbsp;&nbsp;
 
 
       //- main area
       .columns
-        //- left column (hardcoded list of stores)
+        //- left column (dynamic list of stores)
         #app-stores.column.col-3
           dl
             dd(v-for='(item, index) in stores', :id="item.id")
-              a(:href="'?' + item.id", @click.prevent='storeSelected')
+              a(:href="'?store_id=' + item.id", @click.prevent='storeSelected')
                 icon(name='bank', :label="item.name")
                 | &nbsp;{{ item.name }}&nbsp;
                 sup(v-if='item.stars > 0')
@@ -153,22 +234,31 @@ html(lang='en')
         //- right column
         //- home app
         #app-home.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          h2 Marketplace Proof-of-Concept
+          h2 Decentralized Marketplace (PoC)
           ul
             li
-              | List of registered online stores on the left side - select any in order to select and buy digital goods,
+              | List of registered online stores is on the left side - select any online store in order to select and buy digital goods,
             li
               b
                 | My Info
-              | &nbsp;popup provides general information about currently logged in user (buyer), such as amount of available coins, etc,
+              | &nbsp;popup provides general information about currently logged in user (buyer or seller), such as amount of available coins, public address, etc,
             li
               b
                 | My Transactions
               | &nbsp;contains list of already successfully executed transactions,
             li
               b
+                | Network Map
+  
+              | &nbsp;renders network map of the whole network, and nodes topology in general,
+            li
+              b
                 | Search
-              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc.
+              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc (TBD),
+            li
+              b
+                | Login As
+              | &nbsp;function provides test possibility to login under different users and execute required activities or viewes.
 
 
         //- my transactions app
@@ -183,16 +273,21 @@ html(lang='en')
                 th Id
                 th Created
                 th Content
+                th View
             tbody
+              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in txs', :id="item.id")
                 td(:title="item.id")
-                  .overme(style="width: 350px")
+                  .overme(style="width: 300px")
                     | {{ item.id }}
                 td
                   | {{ item.ts }}
                 td.overme(:title="item.all")
-                  .overme(style="width: 550px")
+                  .overme(style="width: 450px")
                     | {{ item.all }}
+                td
+                  button.btn.btn-link(@click.prevent="txView")
+                    icon(name='eye', scale='2', label='View')
 
 
         //- search app
@@ -235,8 +330,8 @@ html(lang='en')
             b
               | {{ currentStoreName }}
             | &nbsp;&nbsp;
-            a(href='#', @click.prevent="storeComments()", title="Others About Store")
-              icon(name='commenting', scale='2', label="Others About Store")
+            a(href='#', @click.prevent="storeComments()", title="Others Talk About Store")
+              icon(name='commenting', scale='2', label="Others Talk About Store")
             | &nbsp;&nbsp;
             a(href='#', @click.prevent="storeRating()", title='Store Rating')
               icon(name='star', scale='2', label='Store Rating')
@@ -244,19 +339,20 @@ html(lang='en')
           table.table.table-striped.table-hover
             thead
               tr
-                th File Name
                 th File Type
+                th File Name
                 th Created
                 th Size
                 th Price
                 th Actions
             tbody
+              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in files', :id="item.id")
-                td
-                  | {{ item.name }}
                 td
                   a(href='#', :title='item.mime')
                     icon(:name='item.type', scale='2', :label='item.mime')
+                td
+                  | {{ item.name }}
                 td
                   | {{ item.ts }}
                 td
@@ -274,8 +370,8 @@ html(lang='en')
                           a(href='#', @click.prevent="fileBuy", title='Buy')
                             icon(name='shopping-cart', scale='2', label='Buy')
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileComments", title="Others About Product")
-                            icon(name='commenting', scale='2', label="Others About Product")
+                          a(href='#', @click.prevent="fileComments", title="Others Talk About Product")
+                            icon(name='commenting', scale='2', label="Others Talk About Product")
                           | &nbsp;&nbsp;
                           a(href='#', @click.prevent="fileRating", title='Product Rating')
                             icon(name='star', scale='2', label='Product Rating')
@@ -292,8 +388,9 @@ html(lang='en')
         | {{ msg }}
 
 
-    script(src='/socket.io/socket.io.js')
-    script(type='text/javascript', src='/js/vendor.js')
-    script(type='text/javascript', src='/js/app.js')
+    //- fake tag for libp2p communication
+    #bridge
+
+
     script.
       document.addEventListener("DOMContentLoaded", function(event) { require('index') })
