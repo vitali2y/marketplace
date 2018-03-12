@@ -275,14 +275,15 @@ html(lang='en')
                 th Content
                 th View
             tbody
+              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in txs', :id="item.id")
                 td(:title="item.id")
-                  .overme(style="width: 350px")
+                  .overme(style="width: 300px")
                     | {{ item.id }}
                 td
                   | {{ item.ts }}
                 td.overme(:title="item.all")
-                  .overme(style="width: 550px")
+                  .overme(style="width: 450px")
                     | {{ item.all }}
                 td
                   button.btn.btn-link(@click.prevent="txView")
@@ -345,6 +346,7 @@ html(lang='en')
                 th Price
                 th Actions
             tbody
+              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in files', :id="item.id")
                 td
                   a(href='#', :title='item.mime')

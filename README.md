@@ -10,13 +10,18 @@ cd marketplace
 npm install
 
 # now put some .PDF, .MP3, .AVI, etc files into 3 "stores":
+# on Linux:
 # ./marketplace_client/dist/linux/store_bob, ./marketplace_client/dist/linux/store_james,
-# and ./marketplace_client/dist/linux/store_tom dirs, and continue with:
+# and ./marketplace_client/dist/linux/store_tom dirs, or
+# on OSX:
+# ./marketplace_client/dist/darwin/store_bob, ./marketplace_client/dist/darwin/store_james,
+# and ./marketplace_client/dist/darwin/store_tom dirs,
+# and continue with:
 
 npm run dev
 ```
 
-Continue online shopping from automatically opened [Alice's session](http://127.0.0.1:3000/?QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61).
+Continue online shopping from automatically opened [Alice's session](http://127.0.0.1:3000/?QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61) in web browser.
 
 ![Marketplace (PoC) @ win10](https://rawgit.com/vitali2y/marketplace/master/docs/marketplace_demo_win10.png)
 
