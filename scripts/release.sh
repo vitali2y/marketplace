@@ -19,7 +19,7 @@ MAJOR_VERSION=$(node -v | awk '{ split($0,v,"."); print substr(v[1], 2) }')
 # adding name, version number, and timestamp for output during booting
 cat ../package.json | ../node_modules/.bin/json -A -a description version | awk -F, 'BEGIN { "date +%y%m%d-%H%M" | getline d } { print "console.log(\""$0" ("d") is starting...\");" }' > ./server.js.tmp && cat ./server.js >> ./server.js.tmp && mv ./server.js.tmp ./server.js &&
 # do not use local rendezvous server on production
-sed -i -e 's/.\/dns4\/localhost\/tcp\.*/peerInfo.multiaddrs.add(multiaddr("\/dns4\/ws-star-signal-4.servep2p.com\/tcp\/443\/wss\/p2p-websocket-star"));/' ./public/js/libp2p-bundle.js &&
+sed -i -e 's/.*\/dns4\/localhost\/tcp.*/peerInfo.multiaddrs.add(multiaddr("\/dns4\/ws-star-signal-4.servep2p.com\/tcp\/443\/wss\/p2p-websocket-star"));/' ./public/js/libp2p-bundle.js &&
 APP_NAME="server-linux-x64.bin" && TARGET="node"$MAJOR_VERSION"-linux-x64" && echo $APP_NAME && ../node_modules/.bin/pkg --targets $TARGET --output ./$APP_NAME ./package.json &&
 mv ./$APP_NAME ../dist/linux &&
 APP_NAME="server-macos-x64.bin" && TARGET="node"$MAJOR_VERSION"-macos-x64" && echo $APP_NAME && ../node_modules/.bin/pkg --targets $TARGET --output ./$APP_NAME ./package.json &&

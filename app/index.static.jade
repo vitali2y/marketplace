@@ -75,14 +75,16 @@ html(lang='en')
           .modal-body
             .content
               form
-                .form-group
-                  label.form-label(for='modal-buy-name') File Name
-                  input#modal-buy-name.form-input(v-model='name', type='text', disabled)
 
                 .form-group
-                  label.form-label(for='modal-buy-balance') Price
-                  .has-icon-right
-                    input#modal-buy-balance.form-input(v-model='price', type='text', disabled)
+                  .columns
+                    .column.col-9
+                      label.form-label(for='modal-buy-name') File Name
+                      input#modal-buy-name.form-input(v-model='name', type='text', disabled)
+                    .column.col-3
+                      label.form-label(for='modal-buy-balance') Price
+                      .has-icon-right
+                        input#modal-buy-balance.form-input(v-model='price', type='text', disabled)
 
                 .form-group
                   label.form-label(for='modal-buy-seller-name') Seller
@@ -191,7 +193,7 @@ html(lang='en')
 
           .modal-body
             .content
-              textarea(readonly, rows='13', cols='62', style='background-color: rgb(242, 242, 255); resize: none;') {{ txContent }}
+              textarea(readonly, rows='13', cols='80', style='background-color: rgb(242, 242, 255); resize: none;') {{ txContent }}
 
           .modal-footer
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
@@ -275,15 +277,14 @@ html(lang='en')
                 th Content
                 th View
             tbody
-              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in txs', :id="item.id")
                 td(:title="item.id")
-                  .overme(style="width: 300px")
+                  .overme(style="width: 350px")
                     | {{ item.id }}
                 td
                   | {{ item.ts }}
                 td.overme(:title="item.all")
-                  .overme(style="width: 450px")
+                  .overme(style="width: 550px")
                     | {{ item.all }}
                 td
                   button.btn.btn-link(@click.prevent="txView")
@@ -346,7 +347,6 @@ html(lang='en')
                 th Price
                 th Actions
             tbody
-              //- TODO: to use Spectre's grid
               tr(v-for='(item, index) in files', :id="item.id")
                 td
                   a(href='#', :title='item.mime')
