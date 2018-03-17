@@ -1,12 +1,14 @@
 {
   "name": "marketplace",
-  "version": "0.0.3",
-  "description": "Marketplace",
+  "version": "0.0.4",
+  "description": "Decentralized Marketplace (PoC)",
   "scripts": {
     "install": "cd ../marketplace_client && npm install && cd - && cd ../marketplace_rendezvous && npm install && cd -",
-    "clean": "rm -rf ./dist/*/server-* ./build && cd ../marketplace_client && npm run clean && cd -",
-    "postinstall": "npm run clean && ./scripts/postinstall.sh && cd ../marketplace_client && ./scripts/postinstall.sh && cd -",
+    "clean": "rm -rf ./dist/*/server-* ./build ./browser/*.js && cd ../marketplace_client && npm run clean && cd -",
+    "postinstall": "npm run clean && npm run set_dev && ./scripts/postinstall.sh && cd ../marketplace_client && ./scripts/postinstall.sh && cd -",
     "jsbin": "ps -fewwww | grep jsbin | awk '{ print $2 }' | xargs kill -TERM; echo 'starting jsbin on http://localhost:3000'; jsbin &> /dev/null &",
+    "set_dev": "./scripts/set_dev.sh",
+    "set_prod": "./scripts/set_prod.sh",
     "test": "echo \"Error: no test specified\" && exit 1",
     "alice": "cd ../marketplace_client; npm run alice; cd -",
     "bob": "cd ../marketplace_client; npm run bob; cd -",
@@ -14,13 +16,13 @@
     "tom": "cd ../marketplace_client; npm run tom; cd -",
     "cl-1": "cd ../marketplace_client; npm run cl-1; cd -",
     "rendezvous": "cd ../marketplace_rendezvous; npm run run; cd -",
-    "libp2p-bundle": "./node_modules/.bin/coffee -c ./browser/libp2p-browser-bundle.coffee ./browser/proto.coffee ./browser/libp2p-bundle.coffee && ./node_modules/.bin/browserify ./browser/libp2p-browser-bundle.js > ./public/js/libp2p-bundle.js",
+    "libp2p-bundle": "./node_modules/.bin/coffee -c ./browser/peer-browser.coffee ./browser/proto.coffee ./browser/libp2p-bundle.coffee && ./node_modules/.bin/browserify ./browser/peer-browser.js > ./public/js/peer-browser-bundle.js",
     "build": "npm run libp2p-bundle && NODE_ENV=development LOGGY_STACKS=1 ./node_modules/.bin/brunch w",
     "server": "(cd ./server && ../node_modules/.bin/coffee ./server.coffee && cd -)",
     "dev": "./node_modules/.bin/concurrently --success last --names 'RNDZ,BUILD,SRV,BOB,TOM,JAMES,CL-1,ALICE' --prefix '{time}-{name}' -t HH:mm:ss --prefix-colors cyan,magenta,yellow,blue,white,gray,green,red 'npm run rendezvous' 'npm run build' 'npm run server' 'npm run bob' 'npm run tom' 'npm run james' 'npm run cl-1' 'npm run alice'",
     "open": "hs -p 3000 ./public",
-    "backup": "F=$npm_package_name$(date +%y%m%d-%H%M).tbz; tar cvfjh ../$F . --exclude=./node_modules --exclude=./marketplace_client/node_modules --exclude=./marketplace_rendezvous/node_modules --exclude=./build --exclude=./marketplace_client/build --exclude=./.git --exclude=./marketplace_client/.git --exclude=./marketplace_rendezvous/.git --exclude=./marketplace_client/dist/*/store_*; echo 'ready: ../'$F",
-    "release": "npm run clean && ./node_modules/.bin/brunch b; npm run libp2p-bundle; ./scripts/release.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; echo 'server released'; cd ./marketplace_client; ./scripts/release.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; cd -"
+    "backup": "F=$npm_package_name$(date +%y%m%d-%H%M).tbz; npm run clean; tar cvfjh ../$F . --exclude=./node_modules --exclude=./marketplace_client/node_modules --exclude=./marketplace_rendezvous/node_modules --exclude=./build --exclude=./marketplace_client/build --exclude=./.git --exclude=./marketplace_client/.git --exclude=./marketplace_rendezvous/.git --exclude=./marketplace_client/dist/*/store_* --exclude=./marketplace_client/dist/*/*/blockchain; echo 'ready: ../'$F",
+    "release": "npm run clean && npm run set_prod && ./node_modules/.bin/brunch b && ./node_modules/.bin/brunch b && npm run libp2p-bundle && ./scripts/release.sh && if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; echo 'server released'; cd ./marketplace_client; ./scripts/release.sh; if [ $? -ne 0 ]; then echo 'failed!!!'; exit 9; fi; cd -"
   },
   "keywords": [
     "decentralized",
@@ -91,5 +93,7 @@
   "engines": {
     "node": ">=8.8.0",
     "npm": ">=5.6.0"
-  }
+  },
+  "local_uri": "/dns4/localhost/tcp/9090/ws/p2p-websocket-star",
+  "uri": "/dns4/ws-star-signal-4.servep2p.com/tcp/443/wss/p2p-websocket-star"
 }

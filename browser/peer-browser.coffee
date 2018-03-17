@@ -14,6 +14,8 @@ proto = require "./proto"
 
 
 browserPeerNode = undefined
+uri = document.querySelector("meta[property='uri']").getAttribute('content')
+console.log 'uri=', uri
 
 
 window.startNode = (@core, cb) ->
@@ -23,7 +25,6 @@ window.startNode = (@core, cb) ->
     hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
     hostPeerInfo = new PeerInfo(hostId)
     browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_MY_INFO, (err, connOut) =>
-      console.log 'browserPeerNode=', browserPeerNode
       if err is null
         tx = { data: browserPeerNode.peerInfo.id.toB58String() }
         pull pull.values(tx), connOut, pull.collect((err, connIn) =>
@@ -42,11 +43,11 @@ window.startNode = (@core, cb) ->
 
 
   PeerInfo.create (err, peerInfo) ->
+    console.log "create:", err, peerInfo
     if err
       cb err
       return
-    # NOTE: be aware this localhost address will be automatically replaced to external one during 'npm run release'
-    peerInfo.multiaddrs.add multiaddr '/dns4/localhost/tcp/9090/ws/p2p-websocket-star'
+    peerInfo.multiaddrs.add multiaddr(uri)
     ws = new WSStar(id: peerInfo)
     mdns = new MulticastDNS(peerInfo, { interval: 2000 })
     modules = 
@@ -54,13 +55,14 @@ window.startNode = (@core, cb) ->
       mdns: mdns
       discovery: [ ws.discovery, mdns.discovery ]
     browserPeerNode = new Node(peerInfo, undefined, modules)
+    console.log "browserPeerNode:", browserPeerNode
 
 
     # browser's node cannot be witness
     browserPeerNode.handle proto.PROTO_TX_STEP2, (protocol, conn) =>
       pull conn, pull.map((v) =>
         console.log 'protocol:', protocol, 'v=', v.toString()
-        '{ "code": "1" }'
+        '{ "code": "11" }'
       ), conn
 
 
@@ -68,23 +70,34 @@ window.startNode = (@core, cb) ->
     browserPeerNode.handle proto.PROTO_TX_STEP4, (protocol, conn) =>
       pull conn, pull.map((v) =>
         console.log 'protocol:', protocol, 'v=', v.toString()
-        '{ "code": "1" }'
+        '{ "code": "12" }'
       ), conn
+
 
     # ignore witness's dial to browser's node
     browserPeerNode.handle proto.PROTO_TX_STEP5, (protocol, conn) =>
       pull conn, pull.map((v) =>
         console.log 'protocol:', protocol, 'v=', v.toString()
-        '{ "code": "1" }'
+        '{ "code": "13" }'
       ), conn
+
+
+    # ignore new public blockchain transaction
+    browserPeerNode.handle proto.PROTO_SYNC_TX, (protocol, conn) =>
+      pull conn, pull.map((v) =>
+        console.log 'protocol:', protocol, 'v=', v.toString()
+        '{ "code": "14" }'
+      ), conn
+
 
     # good news about successfully executed transaction
     browserPeerNode.handle proto.PROTO_TX_STEP6, (protocol, conn) =>
       pull conn, pull.map((v) =>
         console.log "protocol:", protocol, 'v=', v.toString()
-        # TODO: to chk 'code'
-        @core.getTxStep6(JSON.parse(v.toString()).id)
+        @core.getTxStep6 JSON.parse(v.toString())
+        '{ "code": "0" }'
       ), conn
+
 
     browserPeerNode.on 'peer:connect', (peerConnected) =>
       peerConnectedB58Id = peerConnected.id.toB58String()
@@ -148,6 +161,7 @@ window.startNode = (@core, cb) ->
 
 
     browserPeerNode.on 'peer:disconnect', (peerLost) ->
+      # TODO: to display "offline" status under the correspondent store
       console.log 'lost connection to:', peerLost.id.toB58String()
       return
 
@@ -158,20 +172,20 @@ window.startNode = (@core, cb) ->
         requestMyInfo()
         @core.resetMyInfoRequest()
 
-      if @core.getAllTxsRequest()
-        # sending request to host node for getting all transactions
+      if @core.getAllPrivateTxsRequest()
+        # sending request to host node for getting all private transactions
         hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
         hostPeerInfo = new PeerInfo(hostId)
-        browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_ALL_TXS, (err, connOut) =>
+        browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_ALL_PRIVATE_TXS, (err, connOut) =>
           if err is null
             tx = { data: 'something' }
             pull pull.values(tx), connOut, pull.collect((err, connIn) =>
-              console.log "#{proto.PROTO_GET_ALL_TXS}: err:", err, "connIn:", connIn.toString()
+              console.log "#{proto.PROTO_GET_ALL_PRIVATE_TXS}: err:", err, "connIn:", connIn.toString()
               if err
                 cb err, connIn
                 return
-              @core.resetAllTxsRequest()
-              @core.setAllTxs connIn.toString()
+              @core.resetAllPrivateTxsRequest()
+              @core.setAllPrivateTxs connIn.toString()
             )
           else
             # ignoring 'Error: "/new/0.0.1" not supported', etc
@@ -179,7 +193,30 @@ window.startNode = (@core, cb) ->
             if m == null
               cb err, connOut
             else
-              cb true, err.toString() 
+              cb true, err.toString()
+
+      if @core.getAllPublicTxsRequest()
+        # sending request to host node for getting all public transactions
+        hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
+        hostPeerInfo = new PeerInfo(hostId)
+        browserPeerNode.dialProtocol hostPeerInfo, proto.PROTO_GET_ALL_PUBLIC_TXS, (err, connOut) =>
+          if err is null
+            tx = { data: 'something' }
+            pull pull.values(tx), connOut, pull.collect((err, connIn) =>
+              console.log "#{proto.PROTO_GET_ALL_PUBLIC_TXS}: err:", err, "connIn:", connIn.toString()
+              if err
+                cb err, connIn
+                return
+              @core.resetAllPublicTxsRequest()
+              @core.setAllPublicTxs connIn.toString()
+            )
+          else
+            # ignoring 'Error: "/new/0.0.1" not supported', etc
+            m = /Error: (.*) not supported/i.exec err.toString()
+            if m == null
+              cb err, connOut
+            else
+              cb true, err.toString()
     ), 1000
 
 

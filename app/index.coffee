@@ -43,8 +43,10 @@ bridge = new Vue(
     @$bus.$on 'start-buy', (@tx, cb) =>
       console.log 'purchasing: 3 of Y:', @tx
       cb 'Initiating a purchase transaction...'
-    @$bus.$on 'get-all-txs', (cb) =>
-      @isAllTxsRequest = true
+    @$bus.$on 'get-all-private-txs', (cb) =>
+      @isAllPrivateTxsRequest = true
+    @$bus.$on 'get-all-public-txs', (cb) =>
+      @isAllPublicTxsRequest = true
     @$bus.$on 'get-my-info', (cb) =>
       @isMyInfoRequest = true
 
@@ -54,18 +56,23 @@ bridge = new Vue(
     txs: false         # all executed transactions request, if any
     hostPeerB58Id : '' # my host (on the client, not this browser's) peer id
     isMyInfoRequest: false
-    isAllTxsRequest: false
+    isAllPrivateTxsRequest: false
+    isAllPublicTxsRequest: false
 
   methods:
     setMyInfo: (data) ->
       @$bus.$emit 'get-my-info-received', data
     setSellerInfo: (data) ->
       @$bus.$emit 'seller-info-received', data
-    informPurchaseStatus: (data) ->
+    informPurchaseStatus: (data, isDone) ->
+      if isDone?
+        @$bus.$emit 'stop-progressbar'
       @$bus.$emit 'notify-user', 'success', data, ->
         console.log 'purchasing:', data
-    setAllTxs: (txs) ->
-      @$bus.$emit 'get-all-txs-received', txs
+    setAllPrivateTxs: (txs) ->
+      @$bus.$emit 'get-all-private-txs-received', txs
+    setAllPublicTxs: (txs) ->
+      @$bus.$emit 'get-all-public-txs-received', txs
 )
 
 
@@ -101,7 +108,7 @@ new Vue(
 )
 
 
-# my transactions component
+# 'My Transactions' component
 new Vue(
   el: '#app-tx'
 
@@ -110,13 +117,15 @@ new Vue(
       @isActive = false
       if app.name == @$options.el
         @isActive = true
-        @$bus.$emit 'get-all-txs'
-    @$bus.$on 'get-tx', (txId) =>
+        @$bus.$emit 'get-all-private-txs'
+        @$bus.$emit 'start-progressbar'
+    @$bus.$on 'get-private-tx', (txId) =>
       for t in @txs
         if txId == t.id
-          @$bus.$emit 'get-tx-returned', t
-    @$bus.$on 'get-all-txs-received', (txs) =>
-      console.log 'on get-all-txs-received:', txs
+          @$bus.$emit 'get-private-tx-returned', t
+    @$bus.$on 'get-all-private-txs-received', (txs) =>
+      @$bus.$emit 'stop-progressbar'
+      console.log 'on get-all-private-txs-received:', txs
       @txs = JSON.parse(txs).data
       # sorting by timestamp
       @txs.sort @sortByProperty('ts')
@@ -152,7 +161,60 @@ new Vue(
 )
 
 
-# search component
+# 'Blockchain Explorer' component
+new Vue(
+  el: '#app-explorer'
+
+  mounted: ->
+    @$bus.$on 'activate-app', (app) =>
+      @isActive = false
+      if app.name == @$options.el
+        @isActive = true
+        @$bus.$emit 'get-all-public-txs'
+        @$bus.$emit 'start-progressbar'
+    @$bus.$on 'get-public-tx', (txId) =>
+      for t in @txs
+        if txId == t.id
+          @$bus.$emit 'get-public-tx-returned', t
+    @$bus.$on 'get-all-public-txs-received', (txs) =>
+      @$bus.$emit 'stop-progressbar'
+      console.log 'on get-all-public-txs-received:', txs
+      @txs = JSON.parse(txs).data
+      # sorting by timestamp
+      @txs.sort @sortByProperty('ts')
+      # TODO: how to do it better?
+      for i in @txs
+        i.all = JSON.stringify(i)
+        i.ts = @getFormattedDate(i.ts)
+
+  data:
+    isActive: false
+    txs:      []
+
+  methods:
+    getFormattedDate: (ts) ->
+      date = new Date(ts * 1000)
+      month = date.getMonth() + 1
+      day = date.getDate()
+      hour = date.getHours()
+      min = date.getMinutes()
+      sec = date.getSeconds()
+      month = (if month < 10 then '0' else '') + month
+      day = (if day < 10 then '0' else '') + day
+      hour = (if hour < 10 then '0' else '') + hour
+      min = (if min < 10 then '0' else '') + min
+      sec = (if sec < 10 then '0' else '') + sec
+      str = date.getFullYear() + '-' + month + '-' + day + ' ' + hour + ':' + min
+      str
+    sortByProperty: (prop) ->
+      (x, y) ->
+        if x[prop] == y[prop] then 0 else if x[prop] > y[prop] then -1 else 1
+    txView: (evt) ->
+      @$bus.$emit "open-modal-txview", evt.path[4].id
+)
+
+
+# 'Search' component
 new Vue(
   el: '#app-search'
 
@@ -168,7 +230,7 @@ new Vue(
 
 
 # list of stores component
-myStores = new Vue(
+new Vue(
   el: '#app-stores'
 
   mounted: ->
@@ -176,6 +238,7 @@ myStores = new Vue(
       @isActive = false
       if app.name == @$options.el
         @isActive = true
+        @$bus.$emit 'start-progressbar'
     @$bus.$on 'get-seller-by-file-id', (id, cb) =>
       console.log 'on get-seller-by-file-id:', id
       for s in @stores
@@ -184,6 +247,7 @@ myStores = new Vue(
             cb s.id, s.user_id, s.name
             return
     @$bus.$on 'seller-info-received', (data) =>
+      @$bus.$emit 'stop-progressbar'
       console.log 'on seller-info-received:', data
       i = 0
       for s in @stores
@@ -214,6 +278,7 @@ myStores = new Vue(
           @currentStoreName = s.name
       console.log 'currentStoreId:', @currentStoreId, 'currentStoreName:', @currentStoreName
       @$bus.$emit 'get-files', @currentStoreId, @currentStoreName, @getFiles(@currentStoreId)
+      @$bus.$emit 'stop-progressbar'
 )
 
 
@@ -234,11 +299,6 @@ new Vue(
     currentStoreId: ''
     currentStoreName: ''
     isActive: false
-
-  # # TODO:
-  # computed:
-  #   ts: ->
-  #     @ts[0..9]
 
   methods:
     storeComments: (evt) ->
@@ -268,6 +328,13 @@ new Vue(
         if _i.id == _id
           @$bus.$emit 'open-modal-buy', data: _i
           break
+    getTs: (ts) ->
+
+      _pad = (val) ->
+        if (val.toString().length < 2) then "0" + val else val
+
+      nts = /^(\d{4})-0?(\d+)-0?(\d+)[T ]0?(\d+):0?(\d+):0?(\d+)/i.exec ts
+      nts[2] + '/' + _pad nts[3] + '/' + nts[1] + ' ' + _pad nts[4] + ':' + _pad nts[5]
 )
 
 
@@ -291,7 +358,7 @@ new Vue(
 )
 
 
-# network map popup
+# 'Network Map' popup
 new Vue(
   el: '#modal-map'
 
@@ -453,7 +520,6 @@ new Vue(
 
   data:
     isActive: false
-    # users: [ "QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61": "Alice", "QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h": "Bob", "Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg": "Tom", "QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL": "James", "QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ": "CL-1" ]
 )
 
 
@@ -479,7 +545,7 @@ new Vue(
 )
 
 
-# my info popup
+# 'My Info' popup
 new Vue(
   el: '#modal-user'
 
@@ -512,7 +578,7 @@ new Vue(
 )
 
 
-# purchase item popup
+# 'Purchase Item'  popup
 new Vue(
   el: '#modal-buy'
 
@@ -551,6 +617,7 @@ new Vue(
     close: ->
       @isActive = false
     buy: ->
+      @$bus.$emit 'start-progressbar'
       @close()
       @$bus.$emit 'notify-user', 'success', 'Preparing for purchase transaction, please wait...', =>
         console.log 'purchasing: 1 of Y'
@@ -561,19 +628,27 @@ new Vue(
 )
 
 
-# view transaction popup
+# 'Transaction #'  popup
 new Vue(
   el: '#modal-txview'
 
   mounted: ->
-    @$bus.$on 'get-tx-returned', (txBody) =>
+    @$bus.$on 'get-private-tx-returned', (txBody) =>
       delete txBody.all
       # TODO: how to ignore 'ts' conversion?
       @txContent = JSON.stringify(txBody, null, 2)
       @isActive = true
     @$bus.$on 'open-modal-txview', (@txId) =>
       console.log 'on open-modal-txview:', @txId
-      @$bus.$emit 'get-tx', @txId
+      @$bus.$emit 'get-private-tx', @txId
+    @$bus.$on 'get-public-tx-returned', (txBody) =>
+      delete txBody.all
+      # TODO: how to ignore 'ts' conversion?
+      @txContent = JSON.stringify(txBody, null, 2)
+      @isActive = true
+    @$bus.$on 'open-modal-txview', (@txId) =>
+      console.log 'on open-modal-txview:', @txId
+      @$bus.$emit 'get-public-tx', @txId
 
   data:
     txId: ''
@@ -586,12 +661,11 @@ new Vue(
 )
 
 
-# notify user toast component
+# notify user component thru raising toast popup
 new Vue(
   el: '#toast'
 
   mounted: ->
-    # notify user thru raising toast popup
     @$bus.$on 'notify-user', (@isSuccess, @msg, cb) =>
       @isActive = true
       setTimeout (=>
@@ -605,4 +679,36 @@ new Vue(
     msg:       ''
     isActive:  false
     isSuccess: true
+)
+
+
+# loading progress bar component
+new Vue(
+  el: '#progressbar'
+
+  mounted: ->
+    @$bus.$on 'start-progressbar', =>
+      @start()
+    @$bus.$on 'stop-progressbar', =>
+      @stop()
+    @start()
+
+  data:
+    progressBar: undefined
+    percentProgressBar: 0
+
+  computed: valProgressBar: ->
+    "width: #{@percentProgressBar}%"
+
+  methods:
+    start: ->
+      @progressBar = setInterval (=>
+        @percentProgressBar+=5
+        if @percentProgressBar >= 105  then @percentProgressBar = 0
+        return
+      ), 30
+
+    stop: ->
+      clearInterval @progressBar
+      @percentProgressBar = 0
 )

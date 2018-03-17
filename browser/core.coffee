@@ -7,15 +7,20 @@ class Core
   constructor: (@bridge) ->
     @resetPurchaseTxRequest()
     @resetMyInfoRequest()
-    @resetAllTxsRequest()
+    @resetAllPrivateTxsRequest()
+    @resetAllPublicTxsRequest()
 
 
   resetPurchaseTxRequest: ->
     @bridge.tx = "{}"
 
 
-  resetAllTxsRequest: ->
-    @bridge.isAllTxsRequest = false
+  resetAllPrivateTxsRequest: ->
+    @bridge.isAllPrivateTxsRequest = false
+
+
+  resetAllPublicTxsRequest: ->
+    @bridge.isAllPublicTxsRequest = false
 
 
   resetMyInfoRequest: ->
@@ -49,10 +54,12 @@ class Core
     '{ "code": "0" }'
 
 
-  getTxStep6: (txId) ->
-    console.log "getTxStep6 (#{txId})"
-    @bridge.informPurchaseStatus "Purchase transaction ##{txId} has been successfully executed!"
-    '{ "code": "0" }'
+  getTxStep6: (data) ->
+    console.log "getTxStep6 (#{JSON.stringify data})"
+    if data.code == "0"
+      @bridge.informPurchaseStatus "Purchase transaction ##{data.id} has been successfully executed!", true
+    else
+      @bridge.informPurchaseStatus "Purchase transaction failed!"
 
 
   getMyInfoRequest: ->
@@ -60,14 +67,24 @@ class Core
     @bridge.isMyInfoRequest
 
 
-  # it returns a request for getting all executed transactions from the browser
-  getAllTxsRequest: ->
-    console.log 'all txs request here'  if @bridge.isAllTxsRequest
-    @bridge.isAllTxsRequest
+  # it returns a request for getting all private ledger's executed transactions from the browser
+  getAllPrivateTxsRequest: ->
+    console.log 'all private txs request here'  if @bridge.isAllPrivateTxsRequest
+    @bridge.isAllPrivateTxsRequest
 
 
-  setAllTxs: (txs) ->
-    @bridge.setAllTxs txs
+  # it returns a request for getting all public blockchain's executed transactions from the browser
+  getAllPublicTxsRequest: ->
+    console.log 'all public txs request here'  if @bridge.isAllPublicTxsRequest
+    @bridge.isAllPublicTxsRequest
+
+
+  setAllPrivateTxs: (txs) ->
+    @bridge.setAllPrivateTxs txs
+
+
+  setAllPublicTxs: (txs) ->
+    @bridge.setAllPublicTxs txs
 
 
 module.exports = Core

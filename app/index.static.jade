@@ -4,12 +4,21 @@
 
 doctype html
 html(lang='en')
+
+  //- global configuration
+  include cfg.jade
+  each cfgParam in cfg
+    - appDescription = cfgParam.description
+    - appVersion = cfgParam.version
+    - appUri = cfgParam.uri
+
   head
     meta(charset='utf-8')
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
-    title Decentralized Marketplace (PoC)
-    meta(name='description', content='Decentralized Marketplace (PoC)')
+    title #{appDescription} - v.#{appVersion}
+    meta(name='description', content="#{appDescription} - v.#{appVersion}")
     meta(name='keywords', content='marketplace, platform, p2p, libp2p, decentralized')
+    meta(property="uri", content="#{appUri}")
     link(href='https://fonts.googleapis.com/css?family=Roboto+Slab', rel='stylesheet')
 
     link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/spectre.css/0.5.1/spectre.min.css')
@@ -22,14 +31,14 @@ html(lang='en')
     link(rel='stylesheet', href='/css/app.css')
 
     script(type='text/javascript', src='/js/vendor.js')
-    script(type='text/javascript', src='/js/libp2p-bundle.js')
+    script(type='text/javascript', src='/js/peer-browser-bundle.js')
     script(type='text/javascript', src='/js/app.js')
 
   body
     .container
 
       //- modal popups
-      //- user popup
+      //- 'My Info' popup
       #modal-user.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
@@ -63,7 +72,7 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- purchase item popup
+      //- 'Purchase Item'  popup
       #modal-buy.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
@@ -78,10 +87,10 @@ html(lang='en')
 
                 .form-group
                   .columns
-                    .column.col-9
+                    .column.col-10
                       label.form-label(for='modal-buy-name') File Name
                       input#modal-buy-name.form-input(v-model='name', type='text', disabled)
-                    .column.col-3
+                    .column.col-2
                       label.form-label(for='modal-buy-balance') Price
                       .has-icon-right
                         input#modal-buy-balance.form-input(v-model='price', type='text', disabled)
@@ -130,7 +139,7 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- network map popup
+      //- 'Network Map' popup
       #modal-map.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
@@ -182,7 +191,7 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- view transaction popup
+      //- 'Transaction #'  popup
       #modal-txview.modal(v-bind:class="{ active: isActive }")
         a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
@@ -210,6 +219,8 @@ html(lang='en')
               a(v-on:click="modal('user')") My Info
               | &nbsp;|&nbsp;
               a(v-on:click="app('tx')") My Transactions
+              | &nbsp;|&nbsp;
+              a(v-on:click="app('explorer')") Blockchain Explorer
               | &nbsp;|&nbsp;
               a(v-on:click="modal('map')") Network Map
               | &nbsp;|&nbsp;
@@ -247,7 +258,11 @@ html(lang='en')
             li
               b
                 | My Transactions
-              | &nbsp;contains list of already successfully executed transactions,
+              | &nbsp;contains list of already successfully executed transactions under personal private ledger,
+            li
+              b
+                | Blockchain Explorer
+              | &nbsp;provides all information from public blockchain,
             li
               b
                 | Network Map
@@ -256,14 +271,14 @@ html(lang='en')
             li
               b
                 | Search
-              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc (TBD),
+              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc among all online nodes (TBD),
             li
               b
                 | Login As
-              | &nbsp;function provides test possibility to login under different users and execute required activities or viewes.
+              | &nbsp;function provides test possibility to login under different users and execute required activities or views.
 
 
-        //- my transactions app
+        //- 'My Transactions' app
         #app-tx.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           h6
             b
@@ -279,19 +294,47 @@ html(lang='en')
             tbody
               tr(v-for='(item, index) in txs', :id="item.id")
                 td(:title="item.id")
-                  .overme(style="width: 350px")
+                  .overme(style="width: 250px")
                     | {{ item.id }}
-                td
+                td(style="width: 150px")
                   | {{ item.ts }}
                 td.overme(:title="item.all")
-                  .overme(style="width: 550px")
+                  .overme(style="width: 500px")
                     | {{ item.all }}
                 td
                   button.btn.btn-link(@click.prevent="txView")
                     icon(name='eye', scale='2', label='View')
 
 
-        //- search app
+        //- 'Blockchain Explorer' app
+        #app-explorer.app.column.col-9(v-bind:class="{ inactive: !isActive }")
+          h6
+            b
+              | Blockchain Explorer
+
+          table.table.table-striped.table-hover
+            thead
+              tr
+                th Id
+                th Created
+                th Content
+                th View
+            tbody
+              tr(v-for='(item, index) in txs', :id="item.id")
+                td(:title="item.id")
+                  .overme(style="width: 250px")
+                    | {{ item.id }}
+                td(style="width: 150px")
+                  | {{ item.ts }}
+                td.overme(:title="item.all")
+                  .overme(style="width: 500px")
+                    | {{ item.all }}
+                td
+                  button.btn.btn-link(@click.prevent="txView")
+                    icon(name='eye', scale='2', label='View')
+
+
+        //- 'Search' app
         #app-search.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           .market-title.gradient-shadow(title='Marketplace Search')
             div Marketplace Search
@@ -302,7 +345,7 @@ html(lang='en')
             button.btn.btn-primary.input-group-btn(@click="$bus.$emit('open-modal-tbd', 'Search')") &nbsp;Go!&nbsp;
 
           .form-group
-            label.form-label Also, by file category too:
+            label.form-label Additionally you might use file category too:
             label.form-radio
               input(type='radio', name='file-type', checked='')
               i.form-icon
@@ -325,7 +368,7 @@ html(lang='en')
               | Archives (ZIP, etc)
 
 
-        //- files app
+        //- list of files app
         #app-files.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           h6
             b
@@ -354,7 +397,7 @@ html(lang='en')
                 td
                   | {{ item.name }}
                 td
-                  | {{ item.ts }}
+                  | {{ getTs(item.ts) }}
                 td
                   | {{ item.size }}
                 td
@@ -386,6 +429,11 @@ html(lang='en')
       button.btn.btn-clear.float-right
       span
         | {{ msg }}
+
+
+    //- loading bar
+    .bar.bar-sm(style='position: fixed; bottom: 0%;')
+      #progressbar.bar-item(role='progressbar', :style="valProgressBar", aria-valuemin='0', aria-valuemax='100')
 
 
     //- fake tag for libp2p communication
