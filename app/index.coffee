@@ -7,6 +7,7 @@ require "vueify/lib/insert-css"
 # importing particular icons from Font Awesome set
 Icon = require 'vue-awesome/components/Icon'
 Vue.component('icon', Icon)
+
 require 'vue-awesome/icons/question-circle-o'
 require 'vue-awesome/icons/file-audio-o'
 require 'vue-awesome/icons/file-text-o'
@@ -20,6 +21,13 @@ require 'vue-awesome/icons/shopping-cart'
 require 'vue-awesome/icons/star'
 require 'vue-awesome/icons/eye'
 require 'vue-awesome/icons/bars'
+
+require 'vue-awesome/icons/link'
+require 'vue-awesome/icons/info-circle'
+require 'vue-awesome/icons/cubes'
+require 'vue-awesome/icons/sitemap'
+require 'vue-awesome/icons/search'
+require 'vue-awesome/icons/plug'
 
 Core = require "../browser/core"
 
@@ -86,8 +94,8 @@ new Vue(
   el: '#navbar'
 
   methods:
-    modal: (app) ->
-      @$bus.$emit "open-modal-#{app}"
+    modal: (appName) ->
+      @$bus.$emit "open-modal-#{appName}"
     app: (appName) ->
       @$bus.$emit 'activate-app', name: '#app-' + appName
 )
@@ -102,6 +110,12 @@ new Vue(
       @isActive = false
       if app.name == @$options.el
         @isActive = true
+
+  methods:
+    modal: (appName) ->
+      @$bus.$emit "open-modal-#{appName}"
+    app: (appName) ->
+      @$bus.$emit 'activate-app', name: '#app-' + appName
 
   data:
     isActive: true
@@ -272,7 +286,8 @@ new Vue(
         if s.id == selectedStoreId
           return s.items
     storeSelected: (evt) ->
-      @currentStoreId = evt.path[1].id
+      # TODO: redo this hardcode
+      @currentStoreId = evt.path[2].id
       for s in @stores
         if s.id == @currentStoreId
           @currentStoreName = s.name

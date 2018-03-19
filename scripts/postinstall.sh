@@ -43,6 +43,13 @@ ln -s ../../../node_modules/vue-awesome/icons/eye.js
 ln -s ../../../node_modules/vue-awesome/icons/star.js
 ln -s ../../../node_modules/vue-awesome/icons/shopping-cart.js
 ln -s ../../../node_modules/vue-awesome/icons/commenting.js
+
+ln -s ../../../node_modules/vue-awesome/icons/link.js
+ln -s ../../../node_modules/vue-awesome/icons/info-circle.js
+ln -s ../../../node_modules/vue-awesome/icons/cubes.js
+ln -s ../../../node_modules/vue-awesome/icons/sitemap.js
+ln -s ../../../node_modules/vue-awesome/icons/search.js
+ln -s ../../../node_modules/vue-awesome/icons/plug.js
 cd -
 
 cd ./app/vue-awesome

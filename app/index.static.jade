@@ -51,11 +51,14 @@ html(lang='en')
             .content
               form
                 .form-group
-                  label.form-label(for='modal-user-name') My Name
-                  input#modal-user-name.form-input(type='text', v-model='name', disabled)
-                .form-group
-                  label.form-label(for='modal-user-email') My Email
-                  input#modal-user-email.form-input(type='text', v-model='email', disabled)
+                  .columns
+                    .column.col-6
+                      label.form-label(for='modal-user-name') My Name
+                      input#modal-user-name.form-input(type='text', v-model='name', disabled)
+                    .column.col-6
+                      label.form-label(for='modal-user-email') My Email
+                      input#modal-user-email.form-input(type='text', v-model='email', disabled)
+
                 .form-group
                   label.form-label(for='modal-user-address') My Address
                   input#modal-user-address.form-input(type='text', v-model='address', disabled)
@@ -111,12 +114,6 @@ html(lang='en')
                     i.form-icon
                     | To send file to my email address
 
-                .form-group
-                  label.form-switch
-                    input(type='checkbox', value='upload')
-                    i.form-icon
-                    | To upload file to my online account
-
           .modal-footer
             a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Purchase') Purchase
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Cancel') Cancel
@@ -152,7 +149,7 @@ html(lang='en')
             .content
               #network-map
                 .vis-network(tabindex='900', style='position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;')
-                  canvas(width='100%', height='100%', style='position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;')
+                  canvas(style='position: relative; touch-action: none; user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; height: 100%;')
               #network-map-legend(style="display: inline-flex")
                 | Legend:&nbsp;&nbsp;
                 div(style='color: red') &#x25C6;
@@ -212,22 +209,44 @@ html(lang='en')
       #navbar.columns
         .column
           header.navbar
-            .navbar-section.hide-sm
+            .navbar-section
               a(v-on:click="app('home')" style='margin: 20px')
                 icon(name='bank', scale='3', label='My Marketplace')
-            .navbar-section.hide-sm
-              a(v-on:click="modal('user')") My Info
-              | &nbsp;|&nbsp;
-              a(v-on:click="app('tx')") My Transactions
-              | &nbsp;|&nbsp;
-              a(v-on:click="app('explorer')") Blockchain Explorer
-              | &nbsp;|&nbsp;
-              a(v-on:click="modal('map')") Network Map
-              | &nbsp;|&nbsp;
-              a(v-on:click="app('search')") Search
-              | &nbsp;|&nbsp;
-              a(v-on:click="modal('loginas')") Login As
-              | &nbsp;&nbsp;
+            .navbar-section
+              .popover.popover-bottom
+                button.btn.btn-link
+                  icon(name='bars', scale='2', label='Menu')
+                .popover-container(style="width: 370px;")
+                  ul.menu
+                    li.menu-item
+                      a(v-on:click="modal('user')")
+                        icon(name='info-circle', scale='1.3', label="My Info")
+                        | &nbsp;&nbsp;My Info 
+
+                    li.menu-item
+                      a(v-on:click="app('tx')")
+                        icon(name='cubes', scale='1.3', label="My Transactions")
+                        | &nbsp;&nbsp;My Transactions
+
+                    li.menu-item
+                      a(v-on:click="app('explorer')")
+                        icon(name='link', scale='1.3', label="Blockchain Explorer")
+                        | &nbsp;&nbsp;Blockchain Explorer
+                    
+                    li.menu-item
+                      a(v-on:click="modal('map')")
+                        icon(name='sitemap', scale='1.3', label="Network Map")
+                        | &nbsp;&nbsp;Network Map
+                    
+                    li.menu-item
+                      a(v-on:click="app('search')")
+                        icon(name='search', scale='1.3', label="Search")
+                        | &nbsp;&nbsp;Search
+                    
+                    li.menu-item
+                      a(v-on:click="modal('loginas')")
+                        icon(name='plug', scale='1.3', label="Login As")
+                        | &nbsp;&nbsp;Login As
 
 
       //- main area
@@ -238,7 +257,8 @@ html(lang='en')
             dd(v-for='(item, index) in stores', :id="item.id")
               a(:href="'?store_id=' + item.id", @click.prevent='storeSelected')
                 icon(name='bank', :label="item.name")
-                | &nbsp;{{ item.name }}&nbsp;
+                b
+                  | &nbsp;{{ item.name }}&nbsp;
                 sup(v-if='item.stars > 0')
                   icon(name='star', :label="item.name")
                   | {{ item.stars }}
@@ -247,34 +267,35 @@ html(lang='en')
         //- right column
         //- home app
         #app-home.app.column.col-9(v-bind:class="{ inactive: !isActive }")
+          br
+          br
           h2 Decentralized Marketplace (PoC)
           ul
             li
               | List of registered online stores is on the left side - select any online store in order to select and buy digital goods,
             li
               b
-                | My Info
+                a(v-on:click="modal('user')") My Info
               | &nbsp;popup provides general information about currently logged in user (buyer or seller), such as amount of available coins, public address, etc,
             li
               b
-                | My Transactions
+                a(v-on:click="app('tx')") My Transactions
               | &nbsp;contains list of already successfully executed transactions under personal private ledger,
             li
               b
-                | Blockchain Explorer
+                a(v-on:click="app('explorer')") Blockchain Explorer
               | &nbsp;provides all information from public blockchain,
             li
               b
-                | Network Map
-  
+                a(v-on:click="modal('map')") Network Map
               | &nbsp;renders network map of the whole network, and nodes topology in general,
             li
               b
-                | Search
+                a(v-on:click="app('search')") Search
               | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc among all online nodes (TBD),
             li
               b
-                | Login As
+                a(v-on:click="modal('loginas')") Login As
               | &nbsp;function provides test possibility to login under different users and execute required activities or views.
 
 
