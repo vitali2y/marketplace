@@ -28,6 +28,8 @@ require 'vue-awesome/icons/cubes'
 require 'vue-awesome/icons/sitemap'
 require 'vue-awesome/icons/search'
 require 'vue-awesome/icons/plug'
+require 'vue-awesome/icons/compass'
+
 
 Core = require "../browser/core"
 
@@ -85,6 +87,8 @@ bridge = new Vue(
 
 
 # starting up the node inside the browser
+if not startNode?   # sometimes during first start it's not initialized - so, reloading
+  location.reload()
 startNode new Core(bridge), (err) ->
   console.log "starting browser's node:", err
 
@@ -122,7 +126,7 @@ new Vue(
 )
 
 
-# 'My Transactions' component
+# "My Transactions" component
 new Vue(
   el: '#app-tx'
 
@@ -170,12 +174,12 @@ new Vue(
     sortByProperty: (prop) ->
       (x, y) ->
         if x[prop] == y[prop] then 0 else if x[prop] > y[prop] then -1 else 1
-    txView: (evt) ->
-      @$bus.$emit "open-modal-txview", evt.path[4].id
+    txView: (txId) ->
+      @$bus.$emit "open-modal-txview", "private", txId
 )
 
 
-# 'Blockchain Explorer' component
+# "Blockchain Explorer" component
 new Vue(
   el: '#app-explorer'
 
@@ -223,12 +227,12 @@ new Vue(
     sortByProperty: (prop) ->
       (x, y) ->
         if x[prop] == y[prop] then 0 else if x[prop] > y[prop] then -1 else 1
-    txView: (evt) ->
-      @$bus.$emit "open-modal-txview", evt.path[4].id
+    txView: (txId) ->
+      @$bus.$emit "open-modal-txview", "public", txId
 )
 
 
-# 'Search' component
+# "Search" component
 new Vue(
   el: '#app-search'
 
@@ -285,9 +289,7 @@ new Vue(
       for s in @stores
         if s.id == selectedStoreId
           return s.items
-    storeSelected: (evt) ->
-      # TODO: redo this hardcode
-      @currentStoreId = evt.path[2].id
+    storeSelected: (@currentStoreId) ->
       for s in @stores
         if s.id == @currentStoreId
           @currentStoreName = s.name
@@ -316,32 +318,26 @@ new Vue(
     isActive: false
 
   methods:
-    storeComments: (evt) ->
-      console.log 'storeComments:', @currentStoreId
+    storeComments: (storeId) ->
+      console.log 'storeComments:', @currentStoreId, storeId
       @$bus.$emit 'open-modal-tbd', 'Others Talk About Store'
-    storeRating: (evt) ->
-      console.log 'storeRating:', @currentStoreId
+    storeRating: (storeId) ->
+      console.log 'storeRating:', @currentStoreId, storeId
       @$bus.$emit 'open-modal-tbd', 'Store Rating'
-    fileComments: (evt) ->
-      console.log 'fileComments:', evt.path[7].id
+    fileComments: (fileId) ->
+      console.log 'fileComments:', fileId
       @$bus.$emit 'open-modal-tbd', 'Others Talk About Product'
-    fileRating: (evt) ->
-      console.log 'fileRating:', evt.path[7].id
+    fileRating: (fileId) ->
+      console.log 'fileRating:', fileId
       @$bus.$emit 'open-modal-tbd', 'Product Rating'
-    filePreview: (evt) ->
-      console.log 'filePreview:', evt.path[7].id
+    filePreview: (fileId) ->
+      console.log 'filePreview:', fileId
       @$bus.$emit 'open-modal-tbd', 'Product Preview'
-    fileBuy: (evt) ->
-      # TODO: redo
-      _id = ''
-      if evt.path[7].nodeName == "TR"
-        _id = evt.path[7].id
-      else
-        _id = evt.path[8].id
-      console.log 'fileBuy:', _id
-      for _i in @files
-        if _i.id == _id
-          @$bus.$emit 'open-modal-buy', data: _i
+    fileBuy: (fileId) ->
+      console.log 'fileBuy:', fileId
+      for i in @files
+        if i.id == fileId
+          @$bus.$emit 'open-modal-buy', data: i
           break
     getTs: (ts) ->
 
@@ -593,13 +589,13 @@ new Vue(
 )
 
 
-# 'Purchase Item'  popup
+# 'Purchase Item' popup
 new Vue(
   el: '#modal-buy'
 
   mounted: ->
     @$bus.$on 'open-modal-buy', (msg) =>
-      console.log 'on open-modal-buy:', msg.data
+      console.log 'on open-modal-buy:', JSON.stringify msg.data
       @id = msg.data.id
       @name = msg.data.name
       @mime = msg.data.mime
@@ -643,7 +639,7 @@ new Vue(
 )
 
 
-# 'Transaction #'  popup
+# "Transaction #" popup
 new Vue(
   el: '#modal-txview'
 
@@ -653,17 +649,17 @@ new Vue(
       # TODO: how to ignore 'ts' conversion?
       @txContent = JSON.stringify(txBody, null, 2)
       @isActive = true
-    @$bus.$on 'open-modal-txview', (@txId) =>
-      console.log 'on open-modal-txview:', @txId
-      @$bus.$emit 'get-private-tx', @txId
+    @$bus.$on 'open-modal-txview', (txType, @txId) =>
+      console.log 'on open-modal-txview:', txType, @txId
+      if txType == "private"
+        @$bus.$emit 'get-private-tx', @txId
+      if txType == "public"
+        @$bus.$emit 'get-public-tx', @txId
     @$bus.$on 'get-public-tx-returned', (txBody) =>
       delete txBody.all
       # TODO: how to ignore 'ts' conversion?
       @txContent = JSON.stringify(txBody, null, 2)
       @isActive = true
-    @$bus.$on 'open-modal-txview', (@txId) =>
-      console.log 'on open-modal-txview:', @txId
-      @$bus.$emit 'get-public-tx', @txId
 
   data:
     txId: ''

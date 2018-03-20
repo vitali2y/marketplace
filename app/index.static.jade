@@ -40,12 +40,12 @@ html(lang='en')
       //- modal popups
       //- 'My Info' popup
       #modal-user.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 My Info
+            .modal-title.h5
+              b My Info
 
           .modal-body
             .content
@@ -75,14 +75,14 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- 'Purchase Item'  popup
+      //- 'Purchase Item' popup
       #modal-buy.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 Purchase Item
+            .modal-title.h5
+              b Purchase Item
 
           .modal-body
             .content
@@ -121,12 +121,12 @@ html(lang='en')
 
       //- TBD popup
       #modal-tbd.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 {{ msg }}
+            .modal-title.h5
+              b {{ msg }}
 
           .modal-body
             .content
@@ -138,12 +138,12 @@ html(lang='en')
 
       //- 'Network Map' popup
       #modal-map.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 Network Map
+            .modal-title.h5
+              b Network Map
 
           .modal-body
             .content
@@ -163,14 +163,14 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- login as popup
+      //- "Login As" popup
       #modal-loginas.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 Login As
+            .modal-title.h5
+              b Login As
 
           .modal-body
             .content
@@ -188,14 +188,14 @@ html(lang='en')
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
-      //- 'Transaction #'  popup
+      //- "Transaction #" popup
       #modal-txview.modal(v-bind:class="{ active: isActive }")
-        a.modal-overlay(href='#', v-on:click='close()', aria-label='Close')
         .modal-container(role='document')
 
           .modal-header
             a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
-            .modal-title.h5 Transaction # {{ txId }}
+            .modal-title.h5
+              b Transaction # {{ txId }}
 
           .modal-body
             .content
@@ -215,7 +215,7 @@ html(lang='en')
             .navbar-section
               .popover.popover-bottom
                 button.btn.btn-link
-                  icon(name='bars', scale='2', label='Menu')
+                  icon(name='compass', scale='2.7', label='Menu')
                 .popover-container(style="width: 370px;")
                   ul.menu
                     li.menu-item
@@ -255,7 +255,7 @@ html(lang='en')
         #app-stores.column.col-3
           dl
             dd(v-for='(item, index) in stores', :id="item.id")
-              a(:href="'?store_id=' + item.id", @click.prevent='storeSelected')
+              a(:href="'?store_id=' + item.id", @click.prevent='storeSelected(item.id)')
                 icon(name='bank', :label="item.name")
                 b
                   | &nbsp;{{ item.name }}&nbsp;
@@ -280,30 +280,29 @@ html(lang='en')
             li
               b
                 a(v-on:click="app('tx')") My Transactions
-              | &nbsp;contains list of already successfully executed transactions under personal private ledger,
+              | &nbsp;view contains list of already successfully executed transactions under personal private ledger,
             li
               b
                 a(v-on:click="app('explorer')") Blockchain Explorer
-              | &nbsp;provides all information from public blockchain,
+              | &nbsp;view provides all information from public blockchain,
             li
               b
                 a(v-on:click="modal('map')") Network Map
-              | &nbsp;renders network map of the whole network, and nodes topology in general,
+              | &nbsp;popup renders topology of the whole network, and some details about nodes and connections between them,
             li
               b
                 a(v-on:click="app('search')") Search
-              | &nbsp;might be used for searching the product by full or partial file name, file category, #hashtag, etc among all online nodes (TBD),
+              | &nbsp;view might be used for searching the product by full or partial file name, file category, #hashtag, etc among all online nodes (TBD),
             li
               b
                 a(v-on:click="modal('loginas')") Login As
-              | &nbsp;function provides test possibility to login under different users and execute required activities or views.
+              | &nbsp;popup provides test possibility to login under different users and to execute required activities, make views, etc.
 
 
-        //- 'My Transactions' app
+        //- "My Transactions" app
         #app-tx.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          h6
-            b
-              | My Transactions
+          h5
+            b My Transactions
 
           table.table.table-striped.table-hover
             thead
@@ -323,15 +322,14 @@ html(lang='en')
                   .overme(style="width: 500px")
                     | {{ item.all }}
                 td
-                  button.btn.btn-link(@click.prevent="txView")
+                  button.btn.btn-link(@click.prevent="txView(item.id)")
                     icon(name='eye', scale='2', label='View')
 
 
-        //- 'Blockchain Explorer' app
+        //- "Blockchain Explorer" app
         #app-explorer.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          h6
-            b
-              | Blockchain Explorer
+          h5
+            b Blockchain Explorer
 
           table.table.table-striped.table-hover
             thead
@@ -351,12 +349,14 @@ html(lang='en')
                   .overme(style="width: 500px")
                     | {{ item.all }}
                 td
-                  button.btn.btn-link(@click.prevent="txView")
+                  button.btn.btn-link(@click.prevent="txView(item.id)")
                     icon(name='eye', scale='2', label='View')
 
 
-        //- 'Search' app
+        //- "Search" app
         #app-search.app.column.col-9(v-bind:class="{ inactive: !isActive }")
+          br
+          br
           .market-title.gradient-shadow(title='Marketplace Search')
             div Marketplace Search
 
@@ -391,9 +391,8 @@ html(lang='en')
 
         //- list of files app
         #app-files.app.column.col-9(v-bind:class="{ inactive: !isActive }")
-          h6
-            b
-              | {{ currentStoreName }}
+          h5
+            b {{ currentStoreName }}
             | &nbsp;&nbsp;
             a(href='#', @click.prevent="storeComments()", title="Others Talk About Store")
               icon(name='commenting', scale='2', label="Others Talk About Store")
@@ -431,16 +430,16 @@ html(lang='en')
                       .card
                         .card-body
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileBuy", title='Buy')
+                          a(href='#', @click.prevent="fileBuy(item.id)", title='To Buy It')
                             icon(name='shopping-cart', scale='2', label='Buy')
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileComments", title="Others Talk About Product")
+                          a(href='#', @click.prevent="fileComments(item.id)", title="Others Talk About Product")
                             icon(name='commenting', scale='2', label="Others Talk About Product")
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileRating", title='Product Rating')
+                          a(href='#', @click.prevent="fileRating(item.id)", title='Product Rating')
                             icon(name='star', scale='2', label='Product Rating')
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="filePreview", title='Product Preview')
+                          a(href='#', @click.prevent="filePreview(item.id)", title='Product Preview')
                             icon(name='eye', scale='2', label='Product Preview')
                           | &nbsp;&nbsp;
 

@@ -50,6 +50,7 @@ ln -s ../../../node_modules/vue-awesome/icons/cubes.js
 ln -s ../../../node_modules/vue-awesome/icons/sitemap.js
 ln -s ../../../node_modules/vue-awesome/icons/search.js
 ln -s ../../../node_modules/vue-awesome/icons/plug.js
+ln -s ../../../node_modules/vue-awesome/icons/compass.js
 cd -
 
 cd ./app/vue-awesome

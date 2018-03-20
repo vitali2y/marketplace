@@ -20,6 +20,12 @@ console.log 'uri=', uri
 
 window.startNode = (@core, cb) ->
 
+  # ignoring 'Error: "/new/0.0.1" not supported', 'Error: Circuit not enabled!', etc
+  ignoreNotSupported = (err, cb) ->
+    console.log "ignoreNotSupported (#{err}, <cb>)"
+    cb null, err.toString()
+
+
   # request for my own info
   requestMyInfo = ->
     hostId = PeerId.createFromB58String @core.bridge.hostPeerB58Id 
@@ -34,14 +40,13 @@ window.startNode = (@core, cb) ->
           @core.setMyInfo connIn
         )
       else
-        # ignoring 'Error: "/new/0.0.1" not supported', etc
-        m = /Error: (.*) not supported/i.exec err.toString()
-        if m == null
-          cb err, connOut
-        else
-          cb true, err.toString()
+        ignoreNotSupported err, cb
+    return
 
 
+  # console.log 'PeerInfo.isConnected()=', PeerInfo.isConnected()
+  # if PeerInfo.isConnected()
+  #   PeerInfo.disconnect()
   PeerInfo.create (err, peerInfo) ->
     console.log "create:", err, peerInfo
     if err
@@ -107,23 +112,18 @@ window.startNode = (@core, cb) ->
         requestMyInfo()
 
       # request for online seller's stores/products, if seller
-      browserPeerNode.dialProtocol peerConnected, proto.PROTO_GET_SELLER_INFO, (err, data) =>
+      browserPeerNode.dialProtocol peerConnected, proto.PROTO_GET_SELLER_INFO, (err, connOut) =>
         if err is null
           tx = { data: 'seller-info' }
-          pull pull.values(tx), data, pull.collect((err, data) =>
-            console.log "#{proto.PROTO_GET_SELLER_INFO}: err:", err, "data:", data
+          pull pull.values(tx), connOut, pull.collect((err, connIn) =>
+            console.log "#{proto.PROTO_GET_SELLER_INFO}: err:", err, "connIn:", connIn.toString()
             if err
-              cb err, data
+              cb err, connIn
               return
-            @core.setSellerInfo data
+            @core.setSellerInfo connIn
           )
         else
-          # ignoring 'Error: "/new/0.0.1" not supported', etc
-          m = /Error: (.*) not supported/i.exec err.toString()
-          if m == null
-            cb err, data
-          else
-            cb true, err.toString()
+          ignoreNotSupported err, cb
       return
 
 
@@ -142,19 +142,14 @@ window.startNode = (@core, cb) ->
               tx = { data: t }
               console.log 'tx:', tx
               pull pull.values(tx), connOut, pull.collect((err, connIn) =>
-                console.log "#{proto.PROTO_TX_STEP1}: err:", err, "connIn:", connIn
+                console.log "#{proto.PROTO_TX_STEP1}: err:", err, "connIn:", connIn.toString()
                 if err
                   cb err, connIn
                   return
                 @core.getTxStep1 connIn
               )
             else
-              # ignoring 'Error: "/new/0.0.1" not supported', etc
-              m = /Error: (.*) not supported/i.exec err.toString()
-              if m == null
-                cb err, connOut
-              else
-                cb true, err.toString()
+              ignoreNotSupported err, cb
       else
         browserPeerNode.dial(peerDiscovered, () => {})
       return
@@ -188,12 +183,8 @@ window.startNode = (@core, cb) ->
               @core.setAllPrivateTxs connIn.toString()
             )
           else
-            # ignoring 'Error: "/new/0.0.1" not supported', etc
-            m = /Error: (.*) not supported/i.exec err.toString()
-            if m == null
-              cb err, connOut
-            else
-              cb true, err.toString()
+            ignoreNotSupported err, cb
+            return
 
       if @core.getAllPublicTxsRequest()
         # sending request to host node for getting all public transactions
@@ -211,17 +202,11 @@ window.startNode = (@core, cb) ->
               @core.setAllPublicTxs connIn.toString()
             )
           else
-            # ignoring 'Error: "/new/0.0.1" not supported', etc
-            m = /Error: (.*) not supported/i.exec err.toString()
-            if m == null
-              cb err, connOut
-            else
-              cb true, err.toString()
+            ignoreNotSupported err, cb
     ), 1000
 
 
     browserPeerNode.start (err) ->
       if err
-        cb err
-        return
+        console.log 'hmmm, err on start:', err
       cb null, browserPeerNode
