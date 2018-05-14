@@ -2,10 +2,17 @@
 # Marketplace Server
 #
 
-express = require "express"
+express = require 'express'
+fs = require 'fs'
+https = require 'https'
+
+key = fs.readFileSync './server.key'
+cert = fs.readFileSync './server.crt'
+options = 
+  key: key
+  cert: cert
 
 app = express()
-app.set 'port', process.env.PORT or 3000
-app.use('/', express.static(__dirname + '/public'))
-server = app.listen(app.get('port'))
-console.log 'listening on port', app.get('port')
+https.createServer(options, app).listen 43443
+app.use '/', express.static(process.cwd() + '/public')
+console.log 'Marketplace Server is listening on 43443...'

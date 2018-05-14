@@ -19,15 +19,16 @@ html(lang='en')
     meta(name='description', content="#{appDescription} - v.#{appVersion}")
     meta(name='keywords', content='marketplace, platform, p2p, libp2p, decentralized')
     meta(property="uri", content="#{appUri}")
+    link(rel='icon', href='/img/favicon.ico', type='image/x-icon')
+    link(rel='shortcut icon', href='/img/favicon.ico', type='image/x-icon')
     link(href='https://fonts.googleapis.com/css?family=Roboto+Slab', rel='stylesheet')
 
-    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/spectre.css/0.5.1/spectre.min.css')
     link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css')
     link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css')
 
     script(type='text/javascript', src='https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js')
 
-    //- link(rel='stylesheet', href='/css/vendor.css')
+    link(rel='stylesheet', href='/css/vendor.css')
     link(rel='stylesheet', href='/css/app.css')
 
     script(type='text/javascript', src='/js/vendor.js')
@@ -35,7 +36,7 @@ html(lang='en')
     script(type='text/javascript', src='/js/app.js')
 
   body
-    .container
+    .container.inactive
 
       //- modal popups
       //- 'My Info' popup
@@ -116,7 +117,48 @@ html(lang='en')
 
           .modal-footer
             a.btn.btn-error(href='#', v-on:click='buy()', aria-label='Purchase') Purchase
+            | &nbsp;&nbsp;
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Cancel') Cancel
+
+
+      //- 'My Wallet' popup
+      #modal-wallet.modal(v-bind:class="{ active: isActive }")
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5
+              b My Wallet
+
+          .modal-body
+            .content
+              form
+                .form-group
+                  .columns
+                    .column.col-10
+                      label.form-label(for='modal-wallet-sender') Sender (My) Address
+                      input#modal-wallet-sender.form-input(type='text', v-model='sender', disabled)
+                    .column.col-2
+                      label.form-label(for='modal-wallet-balance') Balance
+                      input#modal-wallet-balance.form-input(type='text', v-model='balance', disabled)
+
+                .form-group
+                  .columns
+                    .column.col-10
+                      label.form-label(for='modal-wallet-recipient') Recipient Address
+
+                      select.form-select.select-lg(v-model="selectedRecipient", style="height: 1.8rem")
+                        option(value="") Select an address
+                        option(v-for='(text, val) in users', :value="val") {{ text }}
+
+                    .column.col-2
+                      label.form-label(for='modal-wallet-amount') Amount
+                      input#modal-wallet-amount.form-input(type='number', v-model='amount', min='1', step='1')
+
+          .modal-footer
+            a.btn.btn-error(href='#', v-on:click='transfer()', aria-label='Transfer') Transfer
+            | &nbsp;&nbsp;
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
       //- TBD popup
@@ -160,6 +202,10 @@ html(lang='en')
                 | &nbsp;witness
 
           .modal-footer
+            a.btn.btn-primary.disabled(href='#', aria-label='Full Screen') FullScr
+            | &nbsp;&nbsp;
+            a.btn.btn-primary(href='#', v-on:click='render()', aria-label='Refresh') Refresh
+            | &nbsp;&nbsp;
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
@@ -175,16 +221,82 @@ html(lang='en')
           .modal-body
             .content
               .input-group
-                span.input-group-addon Select user:
-                select#loginas.form-select.select-lg
-                  option(id="QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61") Alice (buyer)
-                  option(id="QmWNi2wgUGDm7weopRAe7WKvr38M5EA6HBjsUA8UNTQk3h") Bob (seller)
-                  option(id="Qmcc6oWA9Mz4e1u7Bgg4j7E9KYmG5UrckwCH1oDh6CTfyg") Tom (seller)
-                  option(id="QmYLhqmsZYUTcVPWhoJK1UFDK2E9wWPJ6S5x1dTf3PRbSL") James (seller)
-                  option(id="QmNrw7pSJNvW1VDUHePb2M6oPWB6zMW2yRfJXDZyrphyVZ") CL-1 (witness)
+
+                select.form-select.select-lg(v-model="selectedUser")
+                  option(value="") Select user to login as
+                  option(v-for='(text, val) in users', :value="val") {{ text }}
 
           .modal-footer
             a.btn.btn-error(href='#', v-on:click='loginAs()', aria-label='Login') Login
+            | &nbsp;&nbsp;
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
+
+
+      //- "Download" popup
+      #modal-download.modal(v-bind:class="{ active: isActive }")
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5
+              b Download
+
+          .modal-body
+            .content
+
+              .columns
+                .column.col-12
+                  | Current version: {{ version }}
+
+              .columns
+                .column.col-3
+                .column.col-3(style="text-align: center")
+                  icon.avatar(name='linux', label='Linux')
+                .column.col-3(style="text-align: center")
+                  icon.avatar(name='apple', label='MacOS')
+                .column.col-3(style="text-align: center")
+                  icon.avatar(name='windows', label='Windows')
+
+              .columns
+                .column.col-3
+                  b Client
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/linux/client-linux-x64.bin', target='_blank') client-linux-x64.bin
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/macos/client-macos-x64.bin', target='_blank') client-macos-x64.bin
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/win/client-win-x86.exe', target='_blank') client-win-x86.exe
+
+              .columns
+                .column.col-3
+                  b Extra
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/linux/leveldown.node', target='_blank') leveldown.node
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/macos/leveldown.node', target='_blank') leveldown.node
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/win/leveldown.node', target='_blank') leveldown.node
+
+              .columns
+                .column.col-3
+                  b Wallet
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/linux/wallet-linux-x64.bin', target='_blank') wallet-linux-x64.bin
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/macos/wallet-macos-x64.bin', target='_blank') wallet-macos-x64.bin
+                .column.col-3.download_cell
+                  .chip
+                    a(href='/download/win/wallet-win-x86.exe', target='_blank') wallet-win-x86.exe
+
+          .modal-footer
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
@@ -199,24 +311,63 @@ html(lang='en')
 
           .modal-body
             .content
-              textarea(readonly, rows='13', cols='80', style='background-color: rgb(242, 242, 255); resize: none;') {{ txContent }}
+              textarea(readonly, rows='13', cols='80', style='background-color: #e2fdeb; resize: none;') {{ txContent }}
 
           .modal-footer
+            a.btn.btn-primary.disabled(href='#', aria-label='Prev') Prev
+            | &nbsp;&nbsp;
+            a.btn.btn-primary.disabled(href='#', aria-label='Next') Next
+            | &nbsp;&nbsp;
+            a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
+
+
+      //- "Preview" popup
+      #modal-preview.modal(v-bind:class="{ active: isActive }")
+        .modal-container(role='document')
+
+          .modal-header
+            a.btn.btn-clear.float-right(href='#', v-on:click='close()', aria-label='Close')
+            .modal-title.h5
+              b Preview
+
+          .modal-body
+            .content
+
+              .preview-image(title="Image preview", v-bind:class="{ inactive: !isActiveImage }")
+                img(:src="url", style="width: 550px; height: 310px")
+
+              .preview-media(v-bind:class="{ inactive: !isActiveMedia }")
+                //- TODO: to adjust controls and stop playing video/music by closing popup
+                video.media-player(:src="url", :poster="poster", controls='', loop='', data-options='{"show":{"volume":true,"fullscreen":true,"download":false}}', style="width: 550px; height: 310px")
+
+              .preview-etc(v-bind:class="{ inactive: !isActiveEtc }")
+
+                .columns
+                  .column(title="No preview (TBD)", style="text-align: center")
+                    icon.eye-slash(name='eye-slash', scale='15', style='color: #2dbe60')
+
+          .modal-footer
+            a.btn.btn-error(href='#', v-on:click='open()', aria-label='Open') Open
+            | &nbsp;&nbsp;
             a.btn.btn-primary(href='#', v-on:click='close()', aria-label='Close') Close
 
 
       //- top navigation bar
-      #navbar.columns
+      #navbar.columns.navbar-bg
         .column
           header.navbar
             .navbar-section
               a(v-on:click="app('home')" style='margin: 20px')
-                icon(name='bank', scale='3', label='My Marketplace')
+                img.sa_logo(src='img/sa-logo.svg')
+              .marketplace
+                | marketplace
             .navbar-section
               .popover.popover-bottom
-                button.btn.btn-link
-                  icon(name='compass', scale='2.7', label='Menu')
-                .popover-container(style="width: 370px;")
+                .marketplace(style="display: inline-block")
+                  | {{ name }}
+                figure.avatar.avatar-lg(style="margin-right: 20px")(v-bind:class="{ badge: globalIndicator != 0 }")(:data-badge='globalIndicator')
+                  icon(style='color: white', name='user-circle', scale='3', label='Menu')
+                .popover-container(style="width: 400px")
                   ul.menu
                     li.menu-item
                       a(v-on:click="modal('user')")
@@ -228,16 +379,28 @@ html(lang='en')
                         icon(name='cubes', scale='1.3', label="My Transactions")
                         | &nbsp;&nbsp;My Transactions
 
+                    li.menu-item(v-bind:class="{ disabledMenu: isDisabled }")
+                      a(v-bind:class="{ disabledLink: isDisabled, badge: purchasedIndicator != 0 }", v-on:click="app('purchased')")(:data-badge='purchasedIndicator')
+                        icon(name='shopping-cart', scale='1.3', label="My Purchased Goods")
+                        | &nbsp;&nbsp;My Purchased Goods
+
+                    li.menu-item
+                      a(v-on:click="modal('wallet')")
+                        icon(name='exchange', scale='1.3', label="My Wallet")
+                        | &nbsp;&nbsp;My Wallet 
+
+                    li.divider
+
                     li.menu-item
                       a(v-on:click="app('explorer')")
                         icon(name='link', scale='1.3', label="Blockchain Explorer")
                         | &nbsp;&nbsp;Blockchain Explorer
-                    
+      
                     li.menu-item
                       a(v-on:click="modal('map')")
                         icon(name='sitemap', scale='1.3', label="Network Map")
                         | &nbsp;&nbsp;Network Map
-                    
+
                     li.menu-item
                       a(v-on:click="app('search')")
                         icon(name='search', scale='1.3', label="Search")
@@ -248,6 +411,18 @@ html(lang='en')
                         icon(name='plug', scale='1.3', label="Login As")
                         | &nbsp;&nbsp;Login As
 
+                    li.divider
+
+                    li.menu-item
+                      a(v-on:click="modal('download')")
+                        icon(name='download', scale='1.3', label="Download")
+                        | &nbsp;&nbsp;Download
+
+                div(style="width: 70px")
+
+
+      div(style='height:20px')
+
 
       //- main area
       .columns
@@ -256,12 +431,12 @@ html(lang='en')
           dl
             dd(v-for='(item, index) in stores', :id="item.id")
               a(:href="'?store_id=' + item.id", @click.prevent='storeSelected(item.id)')
-                icon(name='bank', :label="item.name")
+                icon(:name="item.icon", scale='1.2', :label="item.name")
                 b
                   | &nbsp;{{ item.name }}&nbsp;
-                sup(v-if='item.stars > 0')
-                  icon(name='star', :label="item.name")
-                  | {{ item.stars }}
+                //- sup(v-if='item.stars > 0')
+                //-   icon(name='star', :label="item.name")
+                //-   | {{ item.stars }}
 
 
         //- right column
@@ -269,22 +444,30 @@ html(lang='en')
         #app-home.app.column.col-9(v-bind:class="{ inactive: !isActive }")
           br
           br
-          h2 Decentralized Marketplace (PoC)
+          h2 Marketplace (PoC)
           ul
             li
               | List of registered online stores is on the left side - select any online store in order to select and buy digital goods,
             li
               b
                 a(v-on:click="modal('user')") My Info
-              | &nbsp;popup provides general information about currently logged in user (buyer or seller), such as amount of available coins, public address, etc,
+              | &nbsp;popup provides general information about currently logged in user, such as amount of available coins, public address, etc,
             li
               b
                 a(v-on:click="app('tx')") My Transactions
-              | &nbsp;view contains list of already successfully executed transactions under personal private ledger,
+              | &nbsp;view contains list of already successfully executed transactions under private ledger,
+            li
+              b
+                a(v-on:click="app('purchased')") My Purchased Goods
+              | &nbsp;view contains list of all purchased files (as from remotely hosted seller's PCs as from online sites), with download/view, etc,
+            li
+              b
+                a(v-on:click="modal('wallet')") My Wallet
+              | &nbsp;popup provides possibility to see the current amount of coins on the own wallet, plus, to transfer coins to another account,
             li
               b
                 a(v-on:click="app('explorer')") Blockchain Explorer
-              | &nbsp;view provides all information from public blockchain,
+              | &nbsp;view provides transaction information from public blockchain,
             li
               b
                 a(v-on:click="modal('map')") Network Map
@@ -296,7 +479,11 @@ html(lang='en')
             li
               b
                 a(v-on:click="modal('loginas')") Login As
-              | &nbsp;popup provides test possibility to login under different users and to execute required activities, make views, etc.
+              | &nbsp;popup provides possibility to login under different users and to execute correspondent different activities on marketplace.
+            li
+              b
+                a(v-on:click="modal('download')") Download
+              | &nbsp;popup is for downloading the latest versions of desktop apps to work with marketplace.
 
 
         //- "My Transactions" app
@@ -323,6 +510,47 @@ html(lang='en')
                     | {{ item.all }}
                 td
                   button.btn.btn-link(@click.prevent="txView(item.id)")
+                    icon(name='eye', scale='2', label='View')
+
+
+        //- "My Purchased Goods" app
+        #app-purchased.app.column.col-9(v-bind:class="{ inactive: !isActive }")
+          h5
+            b My Purchased Goods
+
+          table.table.table-striped.table-hover
+            thead
+              tr
+                th File Type
+                th File Name
+                th Tx #
+                th Created
+                th Seller
+                th Size
+                th Price
+                th Preview
+            tbody
+              tr(v-for='(item, index) in files', :id="item.id")
+                td
+                  a(href='#', :title='item.mime')
+                    icon(:name='item.type', scale='2.5', :label='item.mime')
+                td(:title="getName(item.hosted, item.file_name)")
+                  .overme(style="width: 180px")
+                    | {{ getName(item.hosted, item.file_name) }}
+                td(:title="item.id")
+                  .overme(style="width: 180px")
+                    | {{ item.id }}
+                td
+                  | {{ item.ts }}
+                td(:title="item.seller")
+                  .overme(style="width: 180px")
+                    | {{ item.seller }}
+                td
+                  | {{ item.size }}
+                td
+                  | {{ item.price }}
+                td
+                  button.btn.btn-link(@click.prevent="purchasedPreview(item.hosted, item.file_id, item.file_name, item.mime, item.size)")
                     icon(name='eye', scale='2', label='View')
 
 
@@ -413,7 +641,7 @@ html(lang='en')
               tr(v-for='(item, index) in files', :id="item.id")
                 td
                   a(href='#', :title='item.mime')
-                    icon(:name='item.type', scale='2', :label='item.mime')
+                    icon(:name='item.type', scale='2.5', :label='item.mime')
                 td
                   | {{ item.name }}
                 td
@@ -430,8 +658,8 @@ html(lang='en')
                       .card
                         .card-body
                           | &nbsp;&nbsp;
-                          a(href='#', @click.prevent="fileBuy(item.id)", title='To Buy It')
-                            icon(name='shopping-cart', scale='2', label='Buy')
+                          a(v-bind:class="{ disabledLink: isDisabled }", href='#', @click.prevent="fileBuy(item.id)", title='To Buy It')
+                            icon(v-bind:class="{ disabledMenu: isDisabled }", name='shopping-cart', scale='2', label='Buy')
                           | &nbsp;&nbsp;
                           a(href='#', @click.prevent="fileComments(item.id)", title="Others Talk About Product")
                             icon(name='commenting', scale='2', label="Others Talk About Product")
@@ -445,7 +673,7 @@ html(lang='en')
 
 
     //- toast notifications
-    #toast.toast(v-bind:class="{ inactive: !isActive, 'toast-success': isSuccess, 'toast-error': !isSuccess }")
+    #toast.toast(v-bind:class="{ inactive: !isActive, 'toast-success': toastType == 0, 'toast-warning': toastType == 1, 'toast-error': toastType == 2 }")
       button.btn.btn-clear.float-right
       span
         | {{ msg }}
@@ -454,10 +682,6 @@ html(lang='en')
     //- loading bar
     .bar.bar-sm(style='position: fixed; bottom: 0%;')
       #progressbar.bar-item(role='progressbar', :style="valProgressBar", aria-valuemin='0', aria-valuemax='100')
-
-
-    //- fake tag for libp2p communication
-    #bridge
 
 
     script.
