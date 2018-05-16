@@ -19,7 +19,7 @@ ln -s ../marketplace/public
 cd -
 
 cd ./browser
-rm proto.coffee filetransfer.coffee
+rm proto.coffee filetransfer.coffee &> /dev/null
 ln -s ../marketplace_client/util/proto.coffee
 ln -s ../marketplace_client/util/filetransfer.coffee
 cd -
@@ -31,7 +31,14 @@ ln -s ../../node_modules/vue/dist/vue.js
 ln -s ../../node_modules/vue-awesome/dist/vue-awesome.js
 cd -
 
+# TODO: uncomment below if you need to customize your theme 
 # ./scripts/spectre.sh
+
+cd ./server
+rm ./public &> /dev/null
+ln -s ../public
+../scripts/make_certs.sh
+cd -
 
 mkdir -p ./app/vue-awesome/icons
 cd ./app/vue-awesome/icons
