@@ -5,9 +5,8 @@
   "scripts": {
     "install": "cd ../marketplace_client && npm install && cd - && cd ../marketplace_rendezvous && npm install && cd -",
     "clean": "rm -rf ./dist/*/server-* ./build ./browser/*.js && cd ../marketplace_client && npm run clean && cd -",
-    "postinstall": "npm run clean && ./scripts/postinstall.sh && ./scripts/set_dev.sh && cd ../marketplace_client && ./scripts/postinstall.sh && ./scripts/set_dev.sh && cd -",
+    "postinstall": "npm run clean && ./scripts/postinstall.sh",
     "jsbin": "ps -fewwww | grep jsbin | awk '{ print $2 }' | xargs kill -TERM; echo 'starting jsbin on http://localhost:3000'; jsbin &> /dev/null &",
-    "set_dev": "./scripts/set_dev.sh && cd ../marketplace_client && ./scripts/set_dev.sh && cd -",
     "set_prod": "./scripts/set_prod.sh && cd ../marketplace_client && ./scripts/set_prod.sh && cd -",
     "test": "echo \"Error: no test specified\" && exit 1",
     "alice": "cd ../marketplace_client; npm run alice; cd -",

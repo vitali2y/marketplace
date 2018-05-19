@@ -13,14 +13,17 @@ ln -s ../marketplace_client
 rm -f ./marketplace_rendezvous
 ln -s ../marketplace_rendezvous
 
+mkdir -p ./public/js &> /dev/null
+
 cd marketplace_server
-rm -f ./public
-ln -s ../marketplace/public
+rm -f ./public &> /dev/null
+ln -s ../public
 cd -
 
 cd ./browser
-rm proto.coffee filetransfer.coffee &> /dev/null
+rm proto.coffee &> /dev/null
 ln -s ../marketplace_client/util/proto.coffee
+rm filetransfer.coffee &> /dev/null
 ln -s ../marketplace_client/util/filetransfer.coffee
 cd -
 
@@ -35,8 +38,10 @@ cd -
 # ./scripts/spectre.sh
 
 cd ./server
-rm ./public &> /dev/null
+rm -f ./public &> /dev/null
+ls -la ../public
 ln -s ../public
+ls -la
 ../scripts/make_certs.sh
 cd -
 
@@ -84,4 +89,5 @@ rm -rf ./components
 ln -s ../../node_modules/vue-awesome/components
 cd -
 
-mkdir -p ./public/js
+# setting the development environment
+./node_modules/.bin/json -f ./package.json description version uri dev_uri -e "this.uri=this.dev_uri; delete this.dev_uri" -o json-0 | awk '{ print "-\n  var cfg = [ "$0" ]" }' > ./app/cfg.jade
