@@ -1,3 +1,4 @@
+[![Waffle.io - Columns and their card count](https://badge.waffle.io/vitali2y/marketplace.png?columns=all)](https://waffle.io/vitali2y/marketplace?utm_source=badge)
 **Decentralized Marketplace (PoC)**
 
 In order to run the demo just execute next commands:
