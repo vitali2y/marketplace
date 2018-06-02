@@ -4,7 +4,7 @@ module.exports =
     javascripts:
       joinTo:
         '/js/app.js': /^app/
-        '/js/vendor.js': /^(?!app)/
+        '/js/vendor.js': /^(node_modules\/)|(vendor\/)+/
 
     stylesheets:
       joinTo:
@@ -24,7 +24,9 @@ module.exports =
     false
 
   minify:
-    false
+#    false
+    true
 
   optimize:
-    false
+#    false
+    true

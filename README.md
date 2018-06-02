@@ -1,4 +1,4 @@
-**Decentralized Marketplace (PoC)**
+**Marketplace (PoC)**
 
 In order to run the demo just execute next commands:
 
@@ -21,14 +21,16 @@ npm install
 npm run dev
 ```
 
-Continue online shopping from automatically opened [Alice's session](http://127.0.0.1:3000/?QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61) in web browser.
+Continue online shopping from automatically opened [Alice's session](http://127.0.0.1:43443/?QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61) in web browser.
 
-![Marketplace (PoC) @ win10](https://rawgit.com/vitali2y/marketplace/master/docs/marketplace_demo_win10.png)
+![Marketplace (PoC) @ win10](/docs/marketplace_demo_win10.png)
 
-[Decentralized Marketplace Client (PoC)](https://github.com/vitali2y/marketplace_client) project is used here as a client app.
+[Marketplace Client (PoC)](https://github.com/vitali2y/marketplace_client) project is used here as a client app.
 
-[Decentralized Marketplace Rendezvous Server (PoC)](https://github.com/vitali2y/marketplace_rendezvous) project is used here for discovery of other decentralized nodes.
+[Marketplace Rendezvous Server (PoC)](https://github.com/vitali2y/marketplace_rendezvous) project is used here for discovery of other decentralized nodes.
 
-In order to release the binary builds (_Linux_, _OSX_, and _Windows_ are supported) of both server and client (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_, _darwin_, and _windows_ dirs) just execute next command from the root _marketplace_ dir, and follow further instructions:
+[Marketplace Server (PoC), in Rust](https://github.com/vitali2y/marketplace_server) project is a next stage of currently used [Marketplace Server (PoC), in CoffeeScript](https://github.com/vitali2y/marketplace/blob/master/server/server.coffee).
+
+In order to release the binary builds (for all _Linux_, _OSX_, and _Windows_ platforms) of both server and client (they will be found under _./dist_ and _./marketplace_client/dist_ accordingly under correspondent _linux_, _darwin_, and _windows_ dirs) just execute next command from the root _marketplace_ dir, and follow further instructions:
 
 `npm run release`
