@@ -13,17 +13,16 @@ ln -s ../marketplace_client
 rm -f ./marketplace_rendezvous
 ln -s ../marketplace_rendezvous
 
-mkdir -p ./public/js &> /dev/null
+mkdir -p ./public/js &>/dev/null
 
 cd marketplace_server
-rm -f ./public &> /dev/null
+rm -f ./public &>/dev/null
 ln -s ../public
 cd -
 
 cd ./browser
-rm proto.coffee &> /dev/null
+rm -f proto.coffee filetransfer.coffee &>/dev/null
 ln -s ../marketplace_client/util/proto.coffee
-rm filetransfer.coffee &> /dev/null
 ln -s ../marketplace_client/util/filetransfer.coffee
 cd -
 
@@ -38,10 +37,8 @@ cd -
 # ./scripts/spectre.sh
 
 cd ./server
-rm -f ./public &> /dev/null
-ls -la ../public
+rm -f ./public &>/dev/null
 ln -s ../public
-ls -la
 ../scripts/make_certs.sh
 cd -
 

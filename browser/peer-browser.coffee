@@ -252,7 +252,7 @@ window.startNode = (@core, cb) ->
       startCnt = new Date()
       browserPeerNode.dialProtocol peerConnected, proto.PROTO_WHORU, (err, connOut) =>
         if err is null
-          tx = { data: new Date().toString() }
+          tx = { data: 'whoru' }
           pull pull.values(tx), connOut, pull.collect((err, connIn) =>
             console.log "<== #{proto.PROTO_WHORU}: err:", err, "connIn:", connIn.toString()
             if err

@@ -24,9 +24,9 @@ module.exports =
     false
 
   minify:
-    false
-#    true
+#    false
+    true
 
   optimize:
-    false
-#    true
+#    false
+    true

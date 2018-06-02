@@ -462,7 +462,7 @@ new Vue(
         return
       u = location.href.split("?")[0]
       if u[-1..] == '#'  then u = u[0..u.length-2]
-      # TODO: to send PROTO_BYEBYE preliminary
+      # TODO: to send PROTO_BYEBYE preliminary (check-if-page-gets-reloaded-or-refreshed-in-javascript)
       location.href = u + "?" + @selectedUser
 
   data:
