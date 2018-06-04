@@ -9,16 +9,16 @@ git clone https://github.com/vitali2y/marketplace_rendezvous.git
 cd marketplace
 npm install
 
-# now put some .PDF, .MP3, .AVI, etc files into 3 "stores":
-# on Linux:
-# ./marketplace_client/dist/linux/store_bob, ./marketplace_client/dist/linux/store_james,
-# and ./marketplace_client/dist/linux/store_tom dirs, or
-# on OSX:
-# ./marketplace_client/dist/darwin/store_bob, ./marketplace_client/dist/darwin/store_james,
-# and ./marketplace_client/dist/darwin/store_tom dirs,
+# now put some .PDF, .MP3, .AVI, etc files into "stores" (on Linux and OSX), i. e.:
+# ./marketplace_client/dist/linux/bob/store_bob, ./marketplace_client/dist/linux/james/store_james,
+# and ./marketplace_client/dist/linux/tom/store_tom directories,
 # and continue with:
 
 npm run dev
+
+# or, alternatively:
+# MARKETPLACE_BROWSER=firefox npm run dev  # start Firefox
+# MARKETPLACE_BROWSER=no npm run dev       # do not start browser at all
 ```
 
 Continue online shopping from automatically opened [Alice's session](http://127.0.0.1:43443/?QmdFdWtiC9HdNWvRH3Cih9hJhLvRZmsDutz549s25CtQ61) in web browser.

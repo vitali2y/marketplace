@@ -4,8 +4,9 @@
 # Postinstall script
 #
 
-rm -f ./marketplace_server
-ln -s ../marketplace_server
+# TODO: uncomment below after server migration to Rust
+# rm -f ./marketplace_server
+# ln -s ../marketplace_server
 
 rm -f ./marketplace_client
 ln -s ../marketplace_client
@@ -13,15 +14,16 @@ ln -s ../marketplace_client
 rm -f ./marketplace_rendezvous
 ln -s ../marketplace_rendezvous
 
-mkdir -p ./public/js &>/dev/null
+mkdir -p ./public/js
 
-cd marketplace_server
-rm -f ./public &>/dev/null
-ln -s ../public
-cd -
+# TODO: uncomment below after server migration to Rust
+# cd marketplace_server
+# rm -f ./public &>/dev/null
+# ln -s ../public
+# cd -
 
 cd ./browser
-rm -f proto.coffee filetransfer.coffee &>/dev/null
+rm -f proto.coffee filetransfer.coffee
 ln -s ../marketplace_client/util/proto.coffee
 ln -s ../marketplace_client/util/filetransfer.coffee
 cd -
@@ -37,7 +39,7 @@ cd -
 # ./scripts/spectre.sh
 
 cd ./server
-rm -f ./public &>/dev/null
+rm -f ./public
 ln -s ../public
 ../scripts/make_certs.sh
 cd -
